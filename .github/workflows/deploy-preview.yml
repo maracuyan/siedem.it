@@ -1,5 +1,9 @@
 name: Deploy Preview
 
+permissions:
+  contents: write
+  pull-requests: write
+
 on:
   push:
     branches-ignore:
@@ -24,3 +28,46 @@ jobs:
 
       - name: Build Jekyll site
         run: bundle exec jekyll build
+
+      - name: Install GitHub CLI
+        run: sudo apt-get update && sudo apt-get install -y gh
+
+      - name: Get branch name
+        id: branch_name
+        run: echo "name=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+
+      - name: Check for existing PR
+        id: check_pr
+        # Only run this step if the event is a push, not a pull_request event
+        # to avoid issues with GH_TOKEN permissions or creating PRs from PRs.
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ steps.branch_name.outputs.name }}
+        run: |
+          echo "Checking for PRs from branch $BRANCH_NAME to main"
+          # Ensure the branch is not 'main' itself before trying to create a PR
+          if [ "$BRANCH_NAME" == "main" ]; then
+            echo "Branch is main, skipping PR check."
+            echo "exists=true" >> $GITHUB_OUTPUT # Effectively skip PR creation
+            exit 0
+          fi
+          EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --base main --state open --json number --jq '.[0].number')
+          if [ -z "$EXISTING_PR" ] || [ "$EXISTING_PR" == "null" ]; then
+            echo "No existing PR found for $BRANCH_NAME."
+            echo "exists=false" >> $GITHUB_OUTPUT
+          else
+            echo "Existing PR #$EXISTING_PR found for $BRANCH_NAME."
+            echo "exists=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request if none exists
+        # Only run if it's a push event and no PR exists for the branch yet
+        if: github.event_name == 'push' && steps.check_pr.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ steps.branch_name.outputs.name }}
+        run: |
+          echo "Creating PR for branch $BRANCH_NAME to main"
+          gh pr create --base main --head "$BRANCH_NAME" --title "Auto-PR for $BRANCH_NAME" --body "PR automatically created by GitHub Actions after successful deploy preview."
+          echo "PR created for $BRANCH_NAME."
