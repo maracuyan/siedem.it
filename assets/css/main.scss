@@ -1,5 +1,3 @@
----
----
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto:wght@400;700&display=swap');
 
 $theme-colors: (
@@ -10,6 +8,8 @@ $theme-colors: (
   link-color: #00A8FF,
   link-hover-color: #40C4FF
 );
+
+@import "minima"; // Or "{{ site.theme }}" if minima is specified in _config.yml
 
 // Basic dark theme overrides
 body {
@@ -29,6 +29,7 @@ a {
   color: map-get($theme-colors, link-color);
   text-decoration: none;
   &:hover, &:focus {
+    color: map-get($theme-colors, link-hover-color); // Consolidated hover color
     text-decoration: underline;
   }
 }
@@ -36,8 +37,6 @@ a {
 a:hover { // This specific a:hover for color can be merged with the &:hover above, but keeping it separate if other :hover styles for 'a' exist.
   color: map-get($theme-colors, link-hover-color);
 }
-
-@import "minima"; // Or "{{ site.theme }}" if minima is specified in _config.yml
 
 // --- Content Styling ---
 p {
@@ -100,7 +99,6 @@ img {
   margin: 1em auto; // Centering images by default can be nice
   border-radius: 4px;
   // box-shadow: 0 2px 8px rgba(0,0,0,0.3); // Optional: for images on dark bg
-}
 
 hr {
   border: 0;
