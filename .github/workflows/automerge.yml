@@ -1,47 +1,102 @@
-name: Auto Merge
+name: Auto Create and Merge PR
 
 on:
   workflow_run:
-    # This workflow will run when the "Deploy Preview" workflow completes.
-    # Adjust "Deploy Preview" to the exact name of the workflow that needs to pass before automerge.
-    workflows: ["Deploy Preview"]
+    workflows: ["Deploy Preview"] # Assumes this is the correct name
     types:
       - completed
 
 jobs:
-  automerge:
+  create_and_automerge_pr:
     runs-on: ubuntu-latest
-    # This condition ensures the automerge job only runs if the triggering workflow_run (e.g., Deploy Preview)
-    # completed successfully.
     if: github.event.workflow_run.conclusion == 'success'
     permissions:
-      contents: write # Needed to merge the PR and delete the branch
-      pull-requests: write # Needed to interact with the PR (read details, merge)
+      contents: write      # Needed to create PR, merge the PR and delete the branch
+      pull-requests: write # Needed to create PR, interact with the PR (read details, merge)
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub CLI prefers GH_TOKEN
+      REPO_NAME: ${{ github.repository }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          # A token is needed to interact with the repository, including fetching PR details
-          # and performing the merge operation.
-          token: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/checkout@v4 # Updated to v4
 
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4 # Updated to v4
         with:
-          python-version: '3.x' # Use a recent stable Python 3 version
+          python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install PyGithub # Install the PyGithub library for interacting with the GitHub API
+        run: pip install PyGithub
+
+      - name: Determine Branches
+        id: branches
+        run: |
+          echo "head_branch=${{ github.event.workflow_run.head_branch }}" >> $GITHUB_OUTPUT
+          echo "base_branch=main" >> $GITHUB_OUTPUT
+          echo "head_sha=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
+          echo "workflow_run_id=${{ github.event.workflow_run.id }}" >> $GITHUB_OUTPUT
+
+      - name: Check for Existing PR
+        id: existing_pr
+        run: |
+          HEAD_BRANCH="${{ steps.branches.outputs.head_branch }}"
+          BASE_BRANCH="${{ steps.branches.outputs.base_branch }}"
+          PR_NUMBER=$(gh pr list --head "$HEAD_BRANCH" --base "$BASE_BRANCH" --state open --json number --jq '.[0].number // ""')
+          if [[ -n "$PR_NUMBER" ]]; then
+            echo "Found existing PR #$PR_NUMBER for $HEAD_BRANCH -> $BASE_BRANCH."
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "pr_created=false" >> $GITHUB_OUTPUT
+          else
+            echo "No existing PR found for $HEAD_BRANCH -> $BASE_BRANCH. Will create one."
+            echo "pr_number=" >> $GITHUB_OUTPUT # Ensure it's empty if no PR found
+            echo "pr_created=true" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_REPO: ${{ github.repository }} # gh cli needs this
+
+      - name: Create Pull Request if Needed
+        id: create_pr
+        if: steps.existing_pr.outputs.pr_created == 'true'
+        run: |
+          HEAD_BRANCH="${{ steps.branches.outputs.head_branch }}"
+          BASE_BRANCH="${{ steps.branches.outputs.base_branch }}"
+          HEAD_SHA="${{ steps.branches.outputs.head_sha }}"
+          WORKFLOW_RUN_ID="${{ steps.branches.outputs.workflow_run_id }}"
+
+          TITLE="Auto-PR: Merge $HEAD_BRANCH to $BASE_BRANCH after successful Deploy Preview"
+          BODY="This PR was automatically created after the 'Deploy Preview' workflow (run #$WORKFLOW_RUN_ID) succeeded for commit $HEAD_SHA on branch $HEAD_BRANCH."
+
+          echo "Creating PR: $TITLE"
+          PR_URL=$(gh pr create --title "$TITLE" --body "$BODY" --head "$HEAD_BRANCH" --base "$BASE_BRANCH" --repo "$GH_REPO")
+          if [[ -z "$PR_URL" ]]; then
+            echo "Failed to create PR."
+            exit 1
+          fi
+          echo "PR created: $PR_URL"
+          # Extract PR number from URL (e.g., https://github.com/owner/repo/pull/123)
+          PR_NUMBER=$(echo "$PR_URL" | grep -oE '[0-9]+$')
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+        env:
+          GH_REPO: ${{ github.repository }}
+
+      - name: Determine PR Number for Automerge
+        id: pr_info
+        run: |
+          if [[ "${{ steps.existing_pr.outputs.pr_created }}" == "true" ]]; then
+            echo "Using newly created PR: ${{ steps.create_pr.outputs.pr_number }}"
+            echo "pr_number=${{ steps.create_pr.outputs.pr_number }}" >> $GITHUB_OUTPUT
+          else
+            echo "Using existing PR: ${{ steps.existing_pr.outputs.pr_number }}"
+            echo "pr_number=${{ steps.existing_pr.outputs.pr_number }}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Run automerge script
-        # The script will be run with environment variables providing necessary context
+        if: steps.pr_info.outputs.pr_number != '' # Only run if we have a PR number
         env:
-          # GITHUB_TOKEN is required for authentication with the GitHub API
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # PR_NUMBER is retrieved from the workflow_run event, specifically the first pull request associated
-          # with the completed workflow run.
-          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
-          # GITHUB_REPOSITORY provides the context of the current repository (e.g., 'owner/repo-name')
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: python .github/scripts/automerge.py
-
+          PR_NUMBER: ${{ steps.pr_info.outputs.pr_number }}
+          # GITHUB_REPOSITORY is already in global env as REPO_NAME, but automerge.py expects GITHUB_REPOSITORY
+          GITHUB_REPOSITORY: ${{ env.REPO_NAME }}
+        run: |
+          echo "Attempting to automerge PR #$PR_NUMBER"
+          python .github/scripts/automerge.py

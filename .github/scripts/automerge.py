@@ -3,7 +3,7 @@ import sys
 from github import Github
 
 # Name of the current workflow, to be excluded from checks
-WORKFLOW_NAME = "Auto Merge"
+WORKFLOW_NAME = "Auto Create and Merge PR"
 
 def automerge():
     print("Automerge script started.")
