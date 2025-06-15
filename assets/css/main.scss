@@ -11,6 +11,13 @@ $theme-colors: (
   link-hover-color: #40C4FF
 );
 
+// Minima theme variables (assuming these are available after import)
+// Fallbacks are provided if they are not.
+$spacing-unit:     30px !default; // Default from Minima
+$small-font-size:  14px !default; // Minima's small font size approx
+$grey-color:       #828282 !default; // Minima's grey
+$text-color:       map-get($theme-colors, primary-text) !default; // Ensure $text-color is set for nav
+
 @import "minima"; // Or "{{ site.theme }}" if minima is specified in _config.yml
 
 // Basic dark theme overrides
@@ -18,7 +25,7 @@ body {
   background-color: map-get($theme-colors, primary-bg);
   color: map-get($theme-colors, primary-text);
   font-family: 'Roboto', sans-serif;
-  line-height: 1.6; // Keep existing line-height
+  line-height: 1.6;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -31,18 +38,14 @@ a {
   color: map-get($theme-colors, link-color);
   text-decoration: none;
   &:hover, &:focus {
-    color: map-get($theme-colors, link-hover-color); // Consolidated hover color
+    color: map-get($theme-colors, link-hover-color);
     text-decoration: underline;
   }
 }
 
-a:hover { // This specific a:hover for color can be merged with the &:hover above, but keeping it separate if other :hover styles for 'a' exist.
-  color: map-get($theme-colors, link-hover-color);
-}
-
 // --- Content Styling ---
 p {
-  line-height: 1.6; // Already set on body, but can be specific here
+  line-height: 1.6;
   margin-bottom: 1em;
 }
 
@@ -52,7 +55,6 @@ ul, ol {
   margin-bottom: 1em;
   li {
     margin-bottom: 0.25em;
-    // Ensure list markers are visible (usually handled by text color)
   }
 }
 
@@ -61,36 +63,34 @@ blockquote {
   border-left: 4px solid map-get($theme-colors, accent-color);
   padding: 1em 1.5em;
   margin: 1.5em 0;
-  p:last-child { // More robust than just 'p' to target the last paragraph
+  p:last-child {
     margin-bottom: 0;
   }
 }
 
-// Inline code
-code:not(pre > code) { // Target inline code specifically
+code:not(pre > code) {
   background: darken(map-get($theme-colors, secondary-bg), 5%);
   padding: 0.2em 0.4em;
   border-radius: 3px;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
   font-size: 0.9em;
-  color: map-get($theme-colors, primary-text); // Ensure text color
+  color: map-get($theme-colors, primary-text);
 }
 
-// Block code
 pre {
   background: darken(map-get($theme-colors, secondary-bg), 5%);
   padding: 1em;
   border-radius: 4px;
   overflow-x: auto;
   margin: 1.5em 0;
-  border: none; // Remove previous border
-  code { // Code inside pre
+  border: none;
+  code {
     background: none;
     padding: 0;
     font-size: inherit;
-    color: inherit; // Inherit color from pre
-    border: none; // Ensure no border inherited from general code
-    border-radius: 0; // Ensure no border-radius inherited
+    color: inherit;
+    border: none;
+    border-radius: 0;
   }
 }
 
@@ -98,9 +98,8 @@ img {
   max-width: 100%;
   height: auto;
   display: block;
-  margin: 1em auto; // Centering images by default can be nice
+  margin: 1em auto;
   border-radius: 4px;
-  // box-shadow: 0 2px 8px rgba(0,0,0,0.3); // Optional: for images on dark bg
 }
 
 hr {
@@ -114,75 +113,223 @@ hr {
 .site-header {
   background: rgba(map-get($theme-colors, secondary-bg), 0.8);
   backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px); // For Safari
+  -webkit-backdrop-filter: blur(10px);
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
-  padding: 1rem 0;
+  z-index: 1020; // Ensure header is above most content but below critical modals if any
+  padding: 0.75rem 0; // Adjusted padding slightly
+
+  .wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    @media screen and (max-width: $on-palm) { // Minima variable for small screens
+        padding-left: $spacing-unit / 2;
+        padding-right: $spacing-unit / 2;
+    }
+  }
 }
 
 .site-title, .site-title:visited {
-  color: map-get($theme-colors, primary-text);
-  // Add some padding if desired, e.g., padding: 0.5rem 0;
+  color: $text-color; // Use defined $text-color
+  font-size: 1.3em;
 }
 
-.site-nav .page-link {
-  color: map-get($theme-colors, primary-text);
-  // Add some padding if desired, e.g., margin-left: 20px;
+// Remove or comment out old .site-nav if no longer used
+// .site-nav .page-link {
+//   color: $text-color;
+// }
+// .site-nav .page-link:hover {
+//   color: map-get($theme-colors, accent-color);
+// }
+
+.main-nav {
+  display: flex;
+  align-items: center;
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    li {
+      margin-left: 18px; // Slightly more space
+      a {
+        text-decoration: none;
+        color: $text-color;
+        font-size: 0.95em;
+        &:hover {
+          color: map-get($theme-colors, link-hover-color);
+          text-decoration: none; // No underline for nav items
+        }
+      }
+    }
+  }
+  .search-icon {
+    margin-left: 25px;
+    svg {
+      fill: $text-color;
+      width: 20px; // Adjusted size
+      height: 20px;
+      vertical-align: middle;
+    }
+    &:hover svg{
+        fill: map-get($theme-colors, link-hover-color);
+    }
+  }
 }
 
-.site-nav .page-link:hover {
-  color: map-get($theme-colors, accent-color);
-}
-
-// --- Footer / Bottom Navbar ---
-.site-footer {
-  background: rgba(map-get($theme-colors, secondary-bg), 0.8);
+// --- Bottom Navbar ---
+// Replaces .site-footer styling for the mobile-first bottom bar
+.bottom-navbar {
+  background: rgba(map-get($theme-colors, secondary-bg), 0.9); // Slightly more opaque
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
-  padding: 0.5rem 0;
-  text-align: center;
-  // Override minima's border if any, or existing border
-  border-top: none;
+  width: 100%;
+  z-index: 1030; // Ensure it's above content, header is 1020
+  border-top: 1px solid darken(map-get($theme-colors, secondary-bg), 5%);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 6px 0; // Reduced padding slightly
 
-  // Ensure text and link colors are appropriate
-  // Links will inherit global 'a' styles (link-color)
-  // Text will inherit body color (primary-text)
-  // Example of specific overrides if needed:
-  // p, .p-name, .contact-list li, .footer-heading { color: map-get($theme-colors, primary-text); }
-  // a { color: map-get($theme-colors, accent-color); }
-  // a:hover { color: map-get($theme-colors, link-hover-color); }
-}
-
-// On larger screens, revert footer to a more static style
-@media (min-width: 768px) { // Breakpoint from minima
-  .site-footer {
-    position: static;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    background: map-get($theme-colors, primary-bg); // Match body or use secondary-bg if preferred
-    padding: 1.5rem 0; // Adjust padding as needed for static footer
-    border-top: 1px solid #333; // Restore border for static footer
-    text-align: left; // Revert text-align if changed for navbar
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: $text-color; // Use primary text color
+    font-size: 10px;
+    svg {
+      width: 20px;
+      height: 20px;
+      margin-bottom: 2px;
+      fill: $text-color; // Icons use primary text color
+    }
+    span {
+        margin-top: 2px; // ensure space even if svg margin-bottom is small
+    }
+    &:hover, &:focus {
+      color: map-get($theme-colors, accent-color); // Hover color from theme
+      svg {
+        fill: map-get($theme-colors, accent-color);
+      }
+    }
+  }
+  // Hide on larger screens if it's meant to be mobile-only
+  // The original .site-footer became static. This one will be hidden.
+  @media (min-width: 768px) { // Minima's $on-medium or similar breakpoint
+    display: none;
   }
 }
+
+// --- Footer (Actual static footer for desktop) ---
+// This is if you want a traditional footer on desktop IN ADDITION to hiding .bottom-navbar
+// For now, the _includes/footer.html is ONLY the bottom-navbar.
+// If a traditional footer is needed, its HTML would need to be in _layouts/default.html for instance.
+// And its styles here:
+// .traditional-footer {
+//   display: none; // Hidden on mobile
+//   @media (min-width: 768px) {
+//     display: block; // Visible on desktop
+//     text-align: center;
+//     padding: $spacing-unit 0;
+//     background: map-get($theme-colors, primary-bg);
+//     border-top: 1px solid #333;
+//   }
+// }
+
 
 // --- Layout Adjustments ---
-.page-content { // Or main.page-content for more specificity if needed
-  padding-top: 80px;    // Generous padding for header (e.g., 60px height + 20px breathing room)
-  padding-bottom: 60px; // Generous padding for bottom navbar (e.g., 40px height + 20px breathing room)
+.page-content {
+  padding-top: 70px; // Adjusted for potentially taller header with new font/padding
+  padding-bottom: 50px; // Adjusted for bottom-navbar height (approx 40-45px + margin)
 
-  @media (min-width: 768px) { // Desktop: bottom navbar becomes static
-    padding-bottom: 20px; // Only need breathing room, or revert to original if footer is not an issue
-                           // Consider footer height if it's substantial even in static mode
+  // On desktop, bottom-navbar is hidden, so padding-bottom can be reduced.
+  @media (min-width: 768px) {
+    padding-bottom: $spacing-unit; // Standard spacing unit for bottom padding on desktop
+                                   // This assumes no traditional static footer, or it has its own margin.
   }
 }
 
-// Basic code block styling for dark theme (This section is now replaced by the new code/pre styles above)
+// Homepage Post List
+.post-list {
+  list-style: none;
+  padding-left: 0;
+  li {
+    background: map-get($theme-colors, secondary-bg); // Card-like background for posts
+    padding: $spacing-unit / 1.5;
+    border-radius: 5px;
+    margin-bottom: $spacing-unit;
+    border: 1px solid darken(map-get($theme-colors, secondary-bg), 5%);
+
+    h3 {
+      margin-top: 0; // Remove top margin for h3 inside li
+      margin-bottom: $spacing-unit / 3;
+      a.post-link {
+        text-decoration: none;
+        color: map-get($theme-colors, primary-text); // Ensure title is clearly visible
+        &:hover {
+          color: map-get($theme-colors, accent-color);
+        }
+      }
+    }
+    .post-meta {
+      display: block; // Ensure it takes its own line or use flex for inline with other meta
+      font-size: $small-font-size;
+      color: $grey-color;
+      margin-bottom: $spacing-unit / 2;
+    }
+    // Excerpt styling
+    p {
+        color: lighten($text-color, 10%); // Slightly lighter text for excerpt
+        font-size: 0.95em;
+    }
+  }
+}
+
+// Basic responsiveness for header nav (example)
+@media screen and (max-width: 600px) { // $on-palm or similar
+  .main-nav ul {
+    // Example: Hide text links and only show search, or implement hamburger
+    // For now, they will wrap or overflow. This needs a JS solution for robust handling.
+    // display: none; // This would hide the nav links on small screens
+  }
+  .main-nav li {
+    margin-left: 10px; // Reduce margin on smaller screens
+  }
+  .main-nav .search-icon {
+    margin-left: 15px; // Reduce margin
+  }
+  .site-title {
+    font-size: 1.1em;
+  }
+}
+
+// Ensure the content wrapper takes full width available in header/footer
+.wrapper {
+    max-width: -webkit-calc(800px - (#{$spacing-unit}));
+    max-width:         calc(800px - (#{$spacing-unit}));
+    margin-right:  auto;
+    margin-left:   auto;
+    padding-right: $spacing-unit / 2;
+    padding-left:  $spacing-unit / 2;
+    @extend %clearfix; // From Minima
+
+    @media screen and (max-width: $on-laptop) { // Minima variable for laptop screens
+        max-width: -webkit-calc(800px - (#{$spacing-unit}));
+        max-width:         calc(800px - (#{$spacing-unit}));
+        padding-right: $spacing-unit / 2;
+        padding-left:  $spacing-unit / 2;
+    }
+    @media screen and (max-width: $on-palm) { // Minima variable
+        max-width: -webkit-calc(100% - (#{$spacing-unit})); // Take more width on small screens
+        max-width:         calc(100% - (#{$spacing-unit}));
+    }
+}
