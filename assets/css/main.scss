@@ -1,55 +1,193 @@
 ---
 ---
-@import "minima"; // Or "{{ site.theme }}" if minima is specified in _config.yml
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto:wght@400;700&display=swap');
+
+$theme-colors: (
+  primary-bg: #0D0D0D,
+  secondary-bg: #1A1A1A,
+  primary-text: #E0E0E0,
+  accent-color: #00A8FF,
+  link-color: #00A8FF,
+  link-hover-color: #40C4FF
+);
 
 // Basic dark theme overrides
 body {
-  background-color: #121212;
-  color: #e0e0e0;
-  line-height: 1.6;
+  background-color: map-get($theme-colors, primary-bg);
+  color: map-get($theme-colors, primary-text);
+  font-family: 'Roboto', sans-serif;
+  line-height: 1.6; // Keep existing line-height
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Inter', sans-serif;
+  color: map-get($theme-colors, primary-text);
+  margin-bottom: 0.5em;
 }
 
 a {
-  color: #bb86fc;
+  color: map-get($theme-colors, link-color);
+  text-decoration: none;
+  &:hover, &:focus {
+    text-decoration: underline;
+  }
 }
 
-a:hover {
-  color: #9e67e8;
+a:hover { // This specific a:hover for color can be merged with the &:hover above, but keeping it separate if other :hover styles for 'a' exist.
+  color: map-get($theme-colors, link-hover-color);
 }
 
-// Header styles (initial, can be refined)
+@import "minima"; // Or "{{ site.theme }}" if minima is specified in _config.yml
+
+// --- Content Styling ---
+p {
+  line-height: 1.6; // Already set on body, but can be specific here
+  margin-bottom: 1em;
+}
+
+ul, ol {
+  margin-left: 1.5em;
+  padding-left: 0.5em;
+  margin-bottom: 1em;
+  li {
+    margin-bottom: 0.25em;
+    // Ensure list markers are visible (usually handled by text color)
+  }
+}
+
+blockquote {
+  background: map-get($theme-colors, secondary-bg);
+  border-left: 4px solid map-get($theme-colors, accent-color);
+  padding: 1em 1.5em;
+  margin: 1.5em 0;
+  p:last-child { // More robust than just 'p' to target the last paragraph
+    margin-bottom: 0;
+  }
+}
+
+// Inline code
+code:not(pre > code) { // Target inline code specifically
+  background: darken(map-get($theme-colors, secondary-bg), 5%);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  font-size: 0.9em;
+  color: map-get($theme-colors, primary-text); // Ensure text color
+}
+
+// Block code
+pre {
+  background: darken(map-get($theme-colors, secondary-bg), 5%);
+  padding: 1em;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 1.5em 0;
+  border: none; // Remove previous border
+  code { // Code inside pre
+    background: none;
+    padding: 0;
+    font-size: inherit;
+    color: inherit; // Inherit color from pre
+    border: none; // Ensure no border inherited from general code
+    border-radius: 0; // Ensure no border-radius inherited
+  }
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1em auto; // Centering images by default can be nice
+  border-radius: 4px;
+  // box-shadow: 0 2px 8px rgba(0,0,0,0.3); // Optional: for images on dark bg
+}
+
+hr {
+  border: 0;
+  height: 1px;
+  background: map-get($theme-colors, secondary-bg);
+  margin: 2em 0;
+}
+
+// --- Header ---
 .site-header {
-  background-color: rgba(31, 31, 31, 0.85); // Semi-transparent
+  background: rgba(map-get($theme-colors, secondary-bg), 0.8);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px); // For Safari
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 1000;
-  border-bottom: 1px solid #333; // Keep the border
+  padding: 1rem 0;
 }
 
 .site-title, .site-title:visited {
-  color: #e0e0e0;
+  color: map-get($theme-colors, primary-text);
+  // Add some padding if desired, e.g., padding: 0.5rem 0;
 }
 
 .site-nav .page-link {
-  color: #e0e0e0;
+  color: map-get($theme-colors, primary-text);
+  // Add some padding if desired, e.g., margin-left: 20px;
 }
 
 .site-nav .page-link:hover {
-  color: #bb86fc;
+  color: map-get($theme-colors, accent-color);
 }
 
-// Footer styles (initial, can be refined)
+// --- Footer / Bottom Navbar ---
 .site-footer {
-  border-top: 1px solid #333;
-  padding: 20px 0;
+  background: rgba(map-get($theme-colors, secondary-bg), 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 0.5rem 0;
+  text-align: center;
+  // Override minima's border if any, or existing border
+  border-top: none;
+
+  // Ensure text and link colors are appropriate
+  // Links will inherit global 'a' styles (link-color)
+  // Text will inherit body color (primary-text)
+  // Example of specific overrides if needed:
+  // p, .p-name, .contact-list li, .footer-heading { color: map-get($theme-colors, primary-text); }
+  // a { color: map-get($theme-colors, accent-color); }
+  // a:hover { color: map-get($theme-colors, link-hover-color); }
 }
 
-// Basic code block styling for dark theme
-pre, code {
-  background-color: #1e1e1e;
-  color: #d4d4d4;
-  border: 1px solid #333;
-  border-radius: 4px;
+// On larger screens, revert footer to a more static style
+@media (min-width: 768px) { // Breakpoint from minima
+  .site-footer {
+    position: static;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: map-get($theme-colors, primary-bg); // Match body or use secondary-bg if preferred
+    padding: 1.5rem 0; // Adjust padding as needed for static footer
+    border-top: 1px solid #333; // Restore border for static footer
+    text-align: left; // Revert text-align if changed for navbar
+  }
 }
+
+// --- Layout Adjustments ---
+.page-content { // Or main.page-content for more specificity if needed
+  padding-top: 80px;    // Generous padding for header (e.g., 60px height + 20px breathing room)
+  padding-bottom: 60px; // Generous padding for bottom navbar (e.g., 40px height + 20px breathing room)
+
+  @media (min-width: 768px) { // Desktop: bottom navbar becomes static
+    padding-bottom: 20px; // Only need breathing room, or revert to original if footer is not an issue
+                           // Consider footer height if it's substantial even in static mode
+  }
+}
+
+// Basic code block styling for dark theme (This section is now replaced by the new code/pre styles above)
+// pre, code {
+//   background-color: #1e1e1e;
+//   color: #d4d4d4;
+//   border: 1px solid #333;
+//   border-radius: 4px;
+// }
