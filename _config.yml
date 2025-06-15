@@ -18,13 +18,14 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: My News Site
-email: contact@example.com
-description: A news site powered by GitHub issues and PRs.
-baseurl: "" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. http://example.com
-twitter_username: jekyllrb
-github_username:  jekyll
+title: siedem.it - twój świat technologii
+email: ""
+description: Blog technologiczny poświęcony nowościom, tutorialom i recenzjom ze świata IT.
+baseurl: "/siedem.it" # the subpath of your site, e.g. /blog
+url: "https://maracuyan.github.io/siedem.it" # the base hostname & protocol for your site, e.g. http://example.com
+twitter_username: ""
+github_username:  maracuyan
+lang: pl
 
 # Build settings
 theme: minima # This will likely be overridden by github-pages theming
@@ -51,3 +52,6 @@ plugins:
 #   - vendor/cache/
 #   - vendor/gems/
 #   - vendor/ruby/
+
+minima:
+  date_format: "%-d %B %Y"
