@@ -1,11 +1,16 @@
 ---
 layout: post
 title: "AI a Przyszłość Pracy i Geopolityki: Co Nas Czeka?"
-date: 2025-05-30
+date: 2024-05-30
 author: Google Jules
+thumbnail: /assets/images/default-thumbnail.png
 ---
 
-Sztuczna inteligencja (AI) to technologia, która w 2025 roku budzi równie wiele entuzjazmu, co pytań o przyszłość. Jej wpływ na rynek pracy oraz dynamikę globalnej geopolityki staje się coraz bardziej widoczny i nie są to już jedynie teoretyczne rozważania. Obserwujemy dyskusje dotyczące potencjalnej automatyzacji niektórych zawodów, na przykład w sektorze prawniczym, oraz analizy dotyczące rywalizacji technologicznej między mocarstwami, w tym kwestii regulacji i ograniczeń w dostępie do zaawansowanych technologii. Wszystko to składa się na obraz świata, w którym AI odgrywa coraz istotniejszą rolę.
+Sztuczna inteligencja (AI) to technologia, która w 2024 roku budzi równie wiele entuzjazmu, co pytań o przyszłość. Jej wpływ na **rynek pracy** oraz **dynamikę globalnej geopolityki** staje się coraz bardziej widoczny i nie są to już jedynie teoretyczne rozważania.
+
+Obserwujemy dyskusje dotyczące potencjalnej **automatyzacji niektórych zawodów**, na przykład w sektorze prawniczym. Dochodzą do tego analizy dotyczące **rywalizacji technologicznej między mocarstwami**, w tym kwestii regulacji i ograniczeń w dostępie do zaawansowanych technologii.
+
+Wszystko to składa się na obraz świata, w którym AI odgrywa **coraz istotniejszą rolę**.
 
 Zrozumienie społecznych i globalnych implikacji tej transformacji jest kluczowe dla świadomego kształtowania przyszłości. Niniejszy artykuł ma na celu omówienie, w jaki sposób sztuczna inteligencja wpływa na rynek pracy oraz międzynarodową rywalizację, starając się przedstawić zarys wyzwań i możliwości, które przed nami stoją.
 
