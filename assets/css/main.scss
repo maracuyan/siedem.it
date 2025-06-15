@@ -164,7 +164,7 @@ hr {
   left: 0;
   right: 0;
   z-index: 1020; // Ensure header is above most content but below critical modals if any
-  padding: 0.75rem 0; // Adjusted padding slightly
+  padding: 0.5rem 0; // Adjusted padding slightly
 
   .wrapper {
     display: flex;
@@ -179,7 +179,7 @@ hr {
 
 .site-title, .site-title:visited {
   color: $text-color; // Use defined $text-color
-  font-size: 1.3em;
+  font-size: 1.1em;
 }
 
 // Remove or comment out old .site-nav if no longer used
@@ -310,7 +310,7 @@ hr {
 
 // --- Layout Adjustments ---
 .page-content {
-  padding-top: 70px; // Adjusted for potentially taller header with new font/padding
+  padding-top: 50px; // Adjusted for potentially taller header with new font/padding
   padding-bottom: 50px; // Adjusted for bottom-navbar height (approx 40-45px + margin)
 
   // On desktop, bottom-navbar is hidden, so padding-bottom can be reduced.
@@ -464,4 +464,103 @@ a.post-card-link {
         max-width: -webkit-calc(100% - (#{$spacing-unit})); // Take more width on small screens
         max-width:         calc(100% - (#{$spacing-unit}));
     }
+}
+
+// --- Sidebar Styles ---
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: -300px; // Initially off-screen
+  width: 300px;
+  height: 100%;
+  background-color: map-get($theme-colors, secondary-bg);
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  z-index: 1040; // Higher than header (1020) and bottom-navbar (1030)
+  transition: right 0.3s ease-in-out;
+  overflow-y: auto;
+  padding: $spacing-unit;
+  color: map-get($theme-colors, primary-text); // Default text color for sidebar
+
+  // Responsive width for smaller screens
+  @media screen and (max-width: $on-palm) { // Assuming $on-palm is around 600px
+    width: 80%;
+    right: -80%; // Adjust initial off-screen position
+  }
+
+  &.open {
+    right: 0;
+  }
+}
+
+.sidebar-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: transparent;
+  border: none;
+  color: map-get($theme-colors, primary-text);
+  font-size: 24px;
+  cursor: pointer;
+
+  &:hover {
+    color: map-get($theme-colors, link-hover-color);
+  }
+}
+
+.sidebar-content {
+  // General styling for content if needed, e.g., margin-top after considering close button
+  margin-top: 20px; // Example: to give some space below the close button area
+
+  h2 {
+    color: map-get($theme-colors, accent-color); // Use accent color for headings
+    margin-top: $spacing-unit;
+    margin-bottom: $spacing-unit / 2;
+    &:first-child {
+      margin-top: 0; // No top margin for the first heading in a section
+    }
+  }
+
+  p {
+    line-height: 1.6;
+    margin-bottom: $spacing-unit / 2;
+  }
+
+  // Styling for the search input in sidebar
+  #sidebar-search-input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: $spacing-unit / 2;
+    border: 1px solid darken(map-get($theme-colors, secondary-bg), 10%);
+    background-color: map-get($theme-colors, primary-bg);
+    color: map-get($theme-colors, primary-text);
+    border-radius: 4px;
+  }
+
+  #sidebar-search-results {
+    // Styles for search results container
+    margin-top: $spacing-unit / 2;
+    // Example:
+    // a { display: block; padding: 5px 0; }
+  }
+}
+
+.sidebar-section-content {
+  display: none; // Hidden by default, JS will manage visibility
+  // Add any common styling for all sections if needed
+}
+
+// --- Sidebar Overlay ---
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 1035; // Below sidebar (1040), above header (1020) and bottom-navbar (1030)
+  display: none; // Initially hidden
+
+  &.active {
+    display: block;
+  }
 }
