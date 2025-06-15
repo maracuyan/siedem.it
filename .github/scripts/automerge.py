@@ -2,9 +2,6 @@ import os
 import sys
 from github import Github
 
-# Name of the current workflow, to be excluded from checks
-WORKFLOW_NAME = "Auto Merge"
-
 def automerge():
     print("Automerge script started.")
 
@@ -31,98 +28,76 @@ def automerge():
     g = Github(github_token)
     try:
         repo = g.get_repo(repo_name)
+        # It's good practice to re-fetch the PR to get the most up-to-date state
         pull_request = repo.get_pull(pr_number)
     except Exception as e:
         print(f"Error getting repository or pull request: {e}")
         sys.exit(1)
 
     print(f"Checking PR #{pull_request.number}: {pull_request.title}")
+    print(f"PR URL: {pull_request.html_url}")
 
-    commit_sha = pull_request.head.sha
-    print(f"Head commit SHA: {commit_sha}")
+    # The 'Wait For Status Checks' action in the workflow should ensure checks have passed.
+    # This is a final safeguard using GitHub's own mergeability status.
+    # Refresh the PR data to ensure mergeability status is current
+    pull_request.update()
 
-    all_checks_passed = True
+    print(f"PR Mergeable: {pull_request.mergeable}")
+    print(f"PR Mergeable State: {pull_request.mergeable_state}")
 
-    # Verify check suites
+    # GitHub's mergeable_state can be:
+    # 'clean' -> merging is possible
+    # 'dirty' -> merge conflicts
+    # 'unknown' -> still being computed
+    # 'blocked' -> blocked by failing checks or other restrictions
+    # 'unstable' -> non-critical checks failed, but mergeable
+    # 'draft' -> PR is a draft
+    # 'behind' -> head branch is behind the base branch
+    # We primarily care that it's not 'dirty', 'blocked', or 'draft' (though draft should be caught by workflow if-condition)
+    # 'clean' is ideal. 'unstable' might be acceptable. 'behind' can sometimes be merged if no conflicts.
+
+    if pull_request.merged:
+        print(f"PR #{pull_request.number} is already merged.")
+        sys.exit(0)
+
+    if not pull_request.mergeable or pull_request.mergeable_state in ['dirty', 'blocked']:
+        print(f"PR #{pull_request.number} is not mergeable or in a non-mergeable state.")
+        print(f"Mergeable: {pull_request.mergeable}, Mergeable State: '{pull_request.mergeable_state}'.")
+        # Potentially list failing checks if state is 'blocked' and info is available,
+        # but the workflow's "Wait For Status Checks" should have already handled this.
+        sys.exit(0) # Not an error for the script, but PR cannot be merged.
+
+    if pull_request.mergeable_state == 'unknown':
+        print(f"PR #{pull_request.number} mergeable state is 'unknown'. Retrying might be needed or GitHub is still computing. Exiting.")
+        sys.exit(0) # Give it time, or check GitHub UI.
+
+    # If we reach here, the PR is considered mergeable by GitHub's API
+    print(f"PR #{pull_request.number} (commit {pull_request.head.sha}) is deemed mergeable by GitHub.")
     try:
-        check_suites = repo.get_commit(commit_sha).get_check_suites()
-        print(f"Found {check_suites.totalCount} check suites.")
-        for suite in check_suites:
-            if suite.app.name == WORKFLOW_NAME:
-                print(f"Skipping check suite from workflow: {suite.app.name} (Status: {suite.status}, Conclusion: {suite.conclusion})")
-                continue
+        print(f"Attempting to merge PR #{pull_request.number}...")
+        # Using a descriptive commit title and message
+        commit_title = f"{pull_request.title} (#{pull_request.number})"
+        commit_message = f"Auto-merged by Auto Merge action.\n\nOriginal PR message:\n{pull_request.body}"
 
-            print(f"Check Suite: {suite.app.name}, Status: {suite.status}, Conclusion: {suite.conclusion}")
-            if suite.conclusion != 'success':
-                print(f"Check suite '{suite.app.name}' did not succeed. Conclusion: {suite.conclusion}.")
-                all_checks_passed = False
-                # No need to break, let's list all failing checks
-    except Exception as e:
-        print(f"Error fetching check suites: {e}")
-        all_checks_passed = False # Treat errors in fetching as checks not passed
+        pull_request.merge(merge_method="squash", commit_title=commit_title, commit_message=commit_message)
+        print(f"Successfully merged PR #{pull_request.number}.")
 
-    # Verify statuses
-    try:
-        statuses = repo.get_commit(commit_sha).get_statuses()
-        print(f"Found {statuses.totalCount} statuses.")
-        for status in statuses:
-            if status.context == WORKFLOW_NAME or (status.creator and status.creator.login == "github-actions"): # More robust check for actions
-                # This part might need refinement if WORKFLOW_NAME is not exactly the context.
-                # Often, the context for actions is the job name, or workflow name / job name
-                # For now, we assume WORKFLOW_NAME or a generic github-actions creator can be skipped
-                # A more precise way would be to identify the exact check run ID of this workflow if possible.
-                print(f"Skipping status: {status.context} (State: {status.state})")
-                continue
-
-            print(f"Status Context: {status.context}, State: {status.state}")
-            if status.state != 'success':
-                print(f"Status '{status.context}' did not succeed. State: {status.state}.")
-                all_checks_passed = False
-                # No need to break, let's list all failing statuses
-    except Exception as e:
-        print(f"Error fetching statuses: {e}")
-        all_checks_passed = False # Treat errors in fetching as checks not passed
-
-
-    if all_checks_passed:
-        print(f"All checks for PR #{pull_request.number} (commit {commit_sha}) have passed.")
+        # Attempt to delete the branch
         try:
-            # Before merging, ensure the PR is still mergeable
-            # Re-fetch the PR to get its latest state
-            pull_request = repo.get_pull(pr_number)
-            if pull_request.mergeable:
-                print(f"Attempting to merge PR #{pull_request.number}...")
-                pull_request.merge(merge_method="squash", commit_title=f"{pull_request.title} (#{pull_request.number})", commit_message=f"Auto-merged by {WORKFLOW_NAME}")
-                print(f"Successfully merged PR #{pull_request.number}.")
-
-                # Attempt to delete the branch
-                try:
-                    branch_name = pull_request.head.ref
-                    print(f"Attempting to delete branch: {branch_name}...")
-                    git_ref = repo.get_git_ref(f"heads/{branch_name}")
-                    git_ref.delete()
-                    print(f"Successfully deleted branch: {branch_name}.")
-                except Exception as e:
-                    print(f"Error deleting branch {branch_name}: {e}")
-                    # For now, just print the error and continue (as the merge was successful)
-
-            else:
-                print(f"PR #{pull_request.number} is not mergeable. Mergeable state: {pull_request.mergeable_state}. Mergeability reason: {pull_request.mergeable_state if hasattr(pull_request, 'mergeable_state') else 'N/A'}")
-                # Additional details that might be useful
-                if pull_request.merged:
-                     print(f"PR #{pull_request.number} is already merged.")
-                elif pull_request.closed_at:
-                     print(f"PR #{pull_request.number} is closed.")
-
+            branch_name = pull_request.head.ref
+            print(f"Attempting to delete branch: {branch_name}...")
+            git_ref = repo.get_git_ref(f"heads/{branch_name}")
+            git_ref.delete()
+            print(f"Successfully deleted branch: {branch_name}.")
         except Exception as e:
-            print(f"Error merging PR #{pull_request.number}: {e}")
-            # It might be useful to see more details from the exception if it's a GithubException
-            if hasattr(e, 'data'):
-                print(f"GitHub API Error Data: {e.data}")
-            sys.exit(1)
-    else:
-        print(f"PR #{pull_request.number} (commit {commit_sha}) will not be merged because not all checks passed.")
-        sys.exit(0) # Exit gracefully, this is not an error in the script itself
+            print(f"Error deleting branch {branch_name}: {e}")
+            # Continue even if branch deletion fails, as merge was successful.
+
+    except Exception as e:
+        print(f"Error merging PR #{pull_request.number}: {e}")
+        if hasattr(e, 'data'):
+            print(f"GitHub API Error Data: {e.data}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     automerge()

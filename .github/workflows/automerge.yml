@@ -1,33 +1,57 @@
 name: Auto Merge
 
 on:
-  workflow_run:
-    workflows: ["Deploy Preview"] # Assumes your deploy preview workflow is named "Deploy Preview"
-    types:
-      - completed
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - main # Or your default branch
 
 jobs:
   automerge:
     runs-on: ubuntu-latest
-    if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.pull_requests &&
-      github.event.workflow_run.pull_requests[0]
+    if: github.event.pull_request && (github.event.pull_request.draft == false || github.event.action == 'ready_for_review')
     permissions:
       contents: write
       pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # Pass token for check fetching
+
+      - name: Wait For Status Checks
+        uses: WyriHaximus/github-action-wait-for-status-checks@v2
+        id: waitforstatuschecks # Give an id to potentially access outputs
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          # This should be the name of THIS workflow's job as it appears in status checks.
+          # If the job name is 'automerge' and the workflow file name is 'automerge.yml',
+          # the check name might be 'automerge' or 'Auto Merge / automerge'.
+          # Let's assume the job name 'automerge' is sufficient.
+          ignoreChecks: |
+            automerge
+            Auto Merge
+          checkInterval: 15
+          timeoutSeconds: 900
+          runningOnPullRequestOnly: true
+          # Optional: Fail if there are no other checks to wait for (e.g. a brand new PR with no other workflows)
+          # failWhenNoChecks: true
+
       - name: Set up Python
+        # This step will only run if the 'Wait For Status Checks' step succeeds
+        if: steps.waitforstatuschecks.outputs.status == 'success'
         uses: actions/setup-python@v3
         with:
           python-version: '3.x'
+
       - name: Install dependencies
+        if: steps.waitforstatuschecks.outputs.status == 'success'
         run: pip install PyGithub
+
       - name: Run automerge script
+        if: steps.waitforstatuschecks.outputs.status == 'success'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
-          GITHUB_REPOSITORY: ${{ github.repository }} # Pass the repository name
+          PR_NUMBER: ${{ github.event.pull_request.number }} # Updated
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: python .github/scripts/automerge.py
