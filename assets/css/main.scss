@@ -101,6 +101,7 @@ img {
   margin: 1em auto; // Centering images by default can be nice
   border-radius: 4px;
   // box-shadow: 0 2px 8px rgba(0,0,0,0.3); // Optional: for images on dark bg
+}
 
 hr {
   border: 0;
@@ -185,9 +186,3 @@ hr {
 }
 
 // Basic code block styling for dark theme (This section is now replaced by the new code/pre styles above)
-// pre, code {
-//   background-color: #1e1e1e;
-//   color: #d4d4d4;
-//   border: 1px solid #333;
-//   border-radius: 4px;
-// }
