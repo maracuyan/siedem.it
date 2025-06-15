@@ -323,6 +323,7 @@ hr {
     @extend %clearfix; // From Minima
 
     @media screen and (max-width: $on-laptop) { // Minima variable for laptop screens
+
         max-width: -webkit-calc(800px - (#{$spacing-unit}));
         max-width:         calc(800px - (#{$spacing-unit}));
         padding-right: $spacing-unit / 2;
