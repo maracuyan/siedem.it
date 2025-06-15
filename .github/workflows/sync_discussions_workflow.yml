@@ -9,7 +9,6 @@ jobs:
     # Only run if the discussion is in a specific category (e.g., 'News', 'Blog Posts')
     # IMPORTANT: User needs to update 'YOUR_DISCUSSION_CATEGORY' to their desired category name.
     # If the category name has spaces, it should be enclosed in quotes.
-    if: github.event.discussion.category.name == 'YOUR_DISCUSSION_CATEGORY'
     runs-on: ubuntu-latest
     permissions:
       contents: write # Required to commit changes back to the repo
