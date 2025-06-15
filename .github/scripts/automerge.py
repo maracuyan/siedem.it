@@ -11,7 +11,8 @@ def automerge():
     # Changed from GITHUB_TOKEN to GH_PAT as requested.
     github_token = os.environ.get("GH_PAT")
     pr_number_str = os.environ.get("PR_NUMBER")
-    repo_name = os.environ.get("GITHUB_REPOSITORY")
+    # Changed from GITHUB_REPOSITORY to REPO_FULL_NAME to use a secret.
+    repo_name = os.environ.get("GH_REPO")
 
     if not github_token:
         # Updated error message to reflect the use of GH_PAT.
@@ -21,7 +22,8 @@ def automerge():
         print("Error: PR_NUMBER not found in environment variables.")
         sys.exit(1)
     if not repo_name:
-        print("Error: GITHUB_REPOSITORY not found in environment variables.")
+        # Updated error message to reflect the use of REPO_FULL_NAME.
+        print("Error: REPO_FULL_NAME not found in environment variables. Please set it as a GitHub secret.")
         sys.exit(1)
 
     try:
@@ -149,14 +151,4 @@ def automerge():
             print(f"Successfully deleted branch: {branch_name}.")
         except Exception as e:
             print(f"Error deleting branch {branch_name}: {e}")
-            # Continue even if branch deletion fails, as merge was successful.
-
-    except Exception as e:
-        print(f"Error merging PR #{pull_request.number}: {e}")
-        if hasattr(e, 'data'):
-            print(f"GitHub API Error Data: {e.data}")
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    automerge()
+            # Continue even if branch deletion fa
