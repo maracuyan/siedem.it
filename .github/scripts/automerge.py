@@ -3,17 +3,19 @@ import sys
 from github import Github
 
 # Name of the current workflow, to be excluded from checks
-WORKFLOW_NAME = "Auto Create and Merge PR"
+WORKFLOW_NAME = "Auto Merge" # Or "Auto Create and Merge PR" depending on your actual workflow name
 
 def automerge():
     print("Automerge script started.")
 
-    github_token = os.environ.get("GITHUB_TOKEN")
+    # Changed from GITHUB_TOKEN to GH_PAT as requested.
+    github_token = os.environ.get("GH_PAT")
     pr_number_str = os.environ.get("PR_NUMBER")
     repo_name = os.environ.get("GITHUB_REPOSITORY")
 
     if not github_token:
-        print("Error: GITHUB_TOKEN not found in environment variables.")
+        # Updated error message to reflect the use of GH_PAT.
+        print("Error: GH_PAT not found in environment variables.")
         sys.exit(1)
     if not pr_number_str:
         print("Error: PR_NUMBER not found in environment variables.")
@@ -40,7 +42,7 @@ def automerge():
     print(f"Checking PR #{pull_request.number}: {pull_request.title}")
     print(f"PR URL: {pull_request.html_url}")
 
-    # Check if the PR is already merged or closed
+    # Check if the PR is already merged, closed, or a draft
     if pull_request.merged:
         print(f"PR #{pull_request.number} is already merged.")
         sys.exit(0)
@@ -112,7 +114,6 @@ def automerge():
     # 'unknown' -> still being computed
     # 'blocked' -> blocked by failing checks or other restrictions
     # 'unstable' -> non-critical checks failed, but mergeable
-    # 'draft' -> PR is a draft (already checked above)
     # 'behind' -> head branch is behind the base branch
 
     if not pull_request.mergeable:

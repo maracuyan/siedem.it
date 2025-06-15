@@ -6,9 +6,13 @@ import google.generativeai as genai
 import re # Import regex for sanitizing filenames
 
 # --- Configuration from Environment Variables ---
-# The GITHUB_REPO variable will be automatically set by GitHub Actions if running in the same repo
+# The GH_REPO variable will be automatically set by GitHub Actions if running in the same repo
 # Otherwise, you might need to manually set it if discussions are in a different repo
-REPO_OWNER, REPO_NAME = os.environ.get('GITHUB_REPO').split('/')
+github_repo_env = os.environ.get('GH_REPO')
+if github_repo_env is None:
+    print("Error: GH_REPO environment variable not set. This script requires the GH_REPO environment variable to be set in the format OWNER/REPOSITORY_NAME.")
+    exit(1)
+REPO_OWNER, REPO_NAME = github_repo_env.split('/')
 GITHUB_TOKEN = os.environ.get('GH_PAT') # MODIFIED: Changed from GITHUB_TOKEN to GH_PAT
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 GEMINI_MODEL_NAME = "gemini-1.5-flash" # Recommended for speed and cost-effectiveness
@@ -60,8 +64,15 @@ def get_single_discussion(discussion_node_id):
           author {
             login
           }
-          # You could also fetch comments here if you want LLM to process them
-          # For simplicity, we are only processing the initial discussion body
+          comments(first: 100) { # Fetching first 100 comments
+            nodes {
+              bodyHTML
+              createdAt
+              author {
+                login
+              }
+            }
+          }
         }
       }
     }
@@ -80,29 +91,31 @@ def get_single_discussion(discussion_node_id):
         return None
 
 
-def generate_blog_post_with_gemini(discussion_title, discussion_body, discussion_category):
+def generate_blog_post_with_gemini(discussion_title, combined_content, discussion_category):
     """
     Uses the Gemini LLM to transform the GitHub Discussion content into a blog post.
     The prompt is crucial here for guiding the LLM's output.
     """
     prompt = f"""
-    You are an AI assistant tasked with converting GitHub Discussions into concise and engaging blog posts for a news site.
+    You are an AI assistant tasked with synthesizing GitHub Discussions and their comments into comprehensive and engaging blog posts for a news site.
 
-    Please take the following GitHub Discussion and reformat it into a blog post suitable for a technical news site.
+    Please take the following GitHub Discussion (which includes the original post and subsequent comments) and transform it into a single, cohesive blog post.
+    The goal is to create a well-rounded article that summarizes the entire conversation, including the main points from the initial discussion and key insights or differing opinions from the comments.
     Focus on clarity, conciseness, and making it engaging for a general audience interested in tech news.
     You can expand on points, rephrase for better flow, and summarize lengthy sections.
-    The output should be primarily the blog post content in Markdown format, ready to be embedded.
-    Ensure the generated content is well-structured with headings and paragraphs if appropriate.
+    Acknowledge differing opinions if they are significant, but generally avoid mentioning specific user names unless critically important for context (and prefer generic attributions like "some users suggested...").
+    The output should be *only* the blog post content in Markdown format, ready to be embedded.
+    Ensure the generated content is well-structured with appropriate headings and paragraphs.
     Do NOT include YAML front matter.
     Do NOT include any introductory or concluding remarks outside the blog post content itself (e.g., "Here is your blog post:").
-    Do NOT include code blocks or triple backticks unless they are part of the actual blog post content.
+    Do NOT include code blocks or triple backticks unless they are essential for the blog post's content.
 
     GitHub Discussion Title: "{discussion_title}"
     GitHub Discussion Category: "{discussion_category}"
 
-    GitHub Discussion Body:
+    Full Discussion Content (Original Post and Comments):
     ```
-    {discussion_body}
+    {combined_content}
     ```
 
     Please generate the blog post content below:
@@ -116,10 +129,10 @@ def generate_blog_post_with_gemini(discussion_title, discussion_body, discussion
             return response.candidates[0].content.parts[0].text
         else:
             print(f"Gemini API returned no content for discussion: '{discussion_title}'")
-            return f"**Error: Gemini API returned no content for this discussion.**\n\nOriginal Discussion:\n\n{discussion_body}"
+            return f"**Error: Gemini API returned no content for this discussion.**\n\nOriginal Discussion:\n\n{combined_content}"
     except Exception as e:
         print(f"Error calling Gemini API for discussion '{discussion_title}': {e}")
-        return f"**Error: Could not generate content for this discussion using Gemini.**\n\nOriginal Discussion:\n\n{discussion_body}"
+        return f"**Error: Could not generate content for this discussion using Gemini.**\n\nOriginal Discussion:\n\n{combined_content}"
 
 def sanitize_filename(title):
     """
@@ -149,11 +162,24 @@ def main():
 
     discussion_id = discussion['id']
     title = discussion['title']
-    body = discussion['bodyHTML'] # Use 'body' if you want raw Markdown
+    # body = discussion['bodyHTML'] # Old way
     created_at_str = discussion['createdAt']
     category = discussion['category']['name'] if discussion['category'] else "Uncategorized"
     author = discussion['author']['login'] if discussion['author'] else "Unknown Author"
     last_edited_at_str = discussion.get('lastEditedAt', created_at_str) # Use edited date if available
+
+    # --- Construct combined content ---
+    original_body = discussion['bodyHTML']
+    combined_content = original_body
+
+    if discussion.get('comments') and discussion['comments'].get('nodes'):
+        combined_content += "\n\n--- Comments ---" # Add a header for comments section
+        for comment in discussion['comments']['nodes']:
+            comment_author = comment.get('author').get('login') if comment.get('author') else 'Unknown User'
+            comment_date = comment.get('createdAt', 'Unknown Date')
+            comment_body = comment.get('bodyHTML', '')
+            # Providing author & date for LLM's context; LLM is instructed not to usually mention users.
+            combined_content += f"\n\n**Comment by {comment_author} on {comment_date}:**\n{comment_body}"
 
     # Format the date for the filename
     filename_date = datetime.strptime(created_at_str, '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%m-%d')
@@ -165,10 +191,10 @@ def main():
     # Construct the full filepath for the Jekyll post
     filepath = os.path.join(posts_dir, f"{filename_date}-{sanitized_title}.md")
 
-    print(f"Processing discussion: '{title}' (ID: {discussion_id})")
+    print(f"Processing discussion: '{title}' (ID: {discussion_id}) with comments.")
 
-    # Call Gemini for content generation
-    blog_content = generate_blog_post_with_gemini(title, body, category)
+    # Call Gemini for content generation with combined content
+    blog_content = generate_blog_post_with_gemini(title, combined_content, category)
 
     # Format dates for Jekyll front matter
     jekyll_created_date = datetime.strptime(created_at_str, '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%m-%d %H:%M:%S %z')

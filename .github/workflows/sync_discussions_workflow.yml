@@ -3,6 +3,8 @@ name: Sync Discussion to Blog Post
 on:
   discussion:
     types: [created, edited]
+  discussion_comment:
+    types: [created]
 
 jobs:
   sync_and_publish:
@@ -27,14 +29,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests PyYAML google-generativeai
 
+      - name: Set Discussion Node ID
+        id: set_discussion_id
+        run: |
+          if [[ "${{ github.event_name }}" == "discussion" ]]; then
+            echo "DISCUSSION_NODE_ID=${{ github.event.discussion.node_id }}" >> $GITHUB_ENV
+          elif [[ "${{ github.event_name }}" == "discussion_comment" ]]; then
+            echo "DISCUSSION_NODE_ID=${{ github.event.comment.discussion.node_id }}" >> $GITHUB_ENV
+          fi
       - name: Run Sync Script
         env:
-          # GITHUB_REPO is automatically set by Actions
-          # GITHUB_TOKEN: Using GH_PAT as per user's setup for script's GraphQL calls
           GH_PAT: ${{ secrets.GH_PAT }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GITHUB_DISCUSSION_ID: ${{ github.event.discussion.node_id }}
-          GITHUB_DISCUSSION_CATEGORY_NAME: ${{ github.event.discussion.category.name }}
+          GITHUB_DISCUSSION_ID: ${{ env.DISCUSSION_NODE_ID }}
         run: python sync_discussions.py
 
       - name: Commit and Push Blog Post
