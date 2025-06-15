@@ -3,10 +3,13 @@ layout: home
 list_title: "Posty" # This might be overridden or ignored by the new content below
 ---
 
-# Witaj w świecie technologii siedem.it!
+<div class="welcome-section">
+# Twoja codzienna dawka innowacji
 
-Odkryj najnowsze trendy, recenzje i tutoriale ze świata Apple, Microsoft, Google, AI i gadżetów.
-Zapraszamy do lektury i dyskusji!
+Od głębokich analiz AI po praktyczne recenzje sprzętu – tutaj znajdziesz wiedzę, która napędza postęp.
+
+[Zobacz Najnowsze Artykuły](#najnowsze-artykuly){: .cta-button}
+</div>
 
 ## Najnowsze artykuły
 
@@ -14,13 +17,22 @@ Zapraszamy do lektury i dyskusji!
   <ul class="post-list">
     {% for post in site.posts limit:5 %}
       <li>
-        <h3>
-          <a class="post-link" href="{{ post.url | relative_url }}">
-            {{ post.title | escape }}
-          </a>
-        </h3>
-        <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span>
-        {{ post.excerpt }}
+        <a href="{{ post.url | relative_url }}" class="post-card-link">
+          {% if post.thumbnail %}
+            <div class="post-card-thumbnail">
+              <img src="{{ post.thumbnail | relative_url }}" alt="Miniatura dla {{ post.title | escape }}">
+            </div>
+          {% endif %}
+          <div class="post-card-content">
+            <h3>
+              {{ post.title | escape }}
+            </h3>
+            <span class="post-meta">{{ post.date | date: site.minima.date_format | default: "%b %-d, %Y" }}</span>
+            <div class="post-excerpt">
+              {{ post.excerpt }}
+            </div>
+          </div>
+        </a>
       </li>
     {% endfor %}
   </ul>

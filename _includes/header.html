@@ -3,12 +3,12 @@
     <a class="site-title" rel="author" href="{{ "/" | relative_url }}">{{ site.title | escape }}</a>
     <nav class="main-nav">
       <ul>
-        <li><a href="{{ "/" | relative_url }}">Strona Główna</a></li>
+        <li {% if page.url == "/" %}class="active-nav-item"{% endif %}><a href="{{ "/" | relative_url }}">Strona Główna</a></li>
         <li><a href="#">Kategorie</a></li>
         <li><a href="#">Recenzje</a></li>
         <li><a href="#">Tutoriale</a></li>
         <li><a href="#">Kontakt</a></li>
-        <li><a href="{{ "/about.html" | relative_url }}">O nas</a></li>
+        <li {% if page.url == "/about.html" or page.url == "/about/" %}class="active-nav-item"{% endif %}><a href="{{ "/about.html" | relative_url }}">O nas</a></li>
       </ul>
       <a href="#" class="search-icon">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="vertical-align: middle;">

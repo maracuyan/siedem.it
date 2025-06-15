@@ -25,13 +25,19 @@ body {
   background-color: map-get($theme-colors, primary-bg);
   color: map-get($theme-colors, primary-text);
   font-family: 'Roboto', sans-serif;
-  line-height: 1.6;
+  line-height: 1.7; // Adjusted line height
+}
+
+h1, .h1 { // Minima uses .h1 class sometimes
+  font-size: 2.2em; // Adjusted font size
+  font-weight: 700; // Adjusted font weight
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Inter', sans-serif;
   color: map-get($theme-colors, primary-text);
   margin-bottom: 0.5em;
+  letter-spacing: 0.02em; // Added letter spacing
 }
 
 a {
@@ -43,7 +49,46 @@ a {
   }
 }
 
+// Call to Action Button
+.cta-button {
+  display: inline-block;
+  background-color: map-get($theme-colors, accent-color);
+  color: map-get($theme-colors, primary-bg); // Or a light color if accent is light
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: bold;
+  margin-top: $spacing-unit / 2;
+  transition: background-color 0.3s ease;
+
+  &:hover, &:focus {
+    background-color: darken(map-get($theme-colors, accent-color), 10%);
+    color: map-get($theme-colors, primary-bg); // Ensure text color remains consistent
+    text-decoration: none;
+  }
+}
+
 // --- Content Styling ---
+
+// Max-width for post content for readability
+.post-content {
+  max-width: 650px;
+  margin-left: auto;
+  margin-right: auto;
+
+  img, figure, video, pre, .highlight { // Added .highlight for code blocks
+    max-width: 100%;
+    height: auto;
+    // margin-left: 0; // Ensure they don't get pushed by parent's auto margins if they are block
+    // margin-right: 0;
+  }
+
+  // Ensure embedded iframes (like videos) also scale
+  iframe {
+    max-width: 100%;
+  }
+}
+
 p {
   line-height: 1.6;
   margin-bottom: 1em;
@@ -148,14 +193,17 @@ hr {
 .main-nav {
   display: flex;
   align-items: center;
+  flex-grow: 1; // Allow main-nav to take space between title and search (if search is outside)
+                 // Or, if search is inside main-nav, this helps align ul.
   ul {
     list-style: none;
     padding: 0;
-    margin: 0;
+    margin: 0; // Reset margin for ul
     display: flex;
     align-items: center;
+    flex-grow: 1; // Allow the list of links to take available space, pushing search icon to the right
     li {
-      margin-left: 18px; // Slightly more space
+      margin-left: 18px; // Spacing between nav items
       a {
         text-decoration: none;
         color: $text-color;
@@ -166,19 +214,29 @@ hr {
         }
       }
     }
+    // Add specific style for the first item if needed, e.g. remove left margin
+    li:first-child {
+        margin-left: 0; // No left margin for the first nav item if ul is pushed by title
+    }
   }
   .search-icon {
-    margin-left: 25px;
+    margin-left: 18px; // Consistent margin, as ul will now fill space
     svg {
-      fill: $text-color;
-      width: 20px; // Adjusted size
-      height: 20px;
+      width: 22px; // Slightly larger
+      height: 22px; // Slightly larger
+      fill: map-get($theme-colors, link-color); // Use link color for more prominence
       vertical-align: middle;
     }
     &:hover svg{
-        fill: map-get($theme-colors, link-hover-color);
+        fill: map-get($theme-colors, link-hover-color); // Keep hover effect
     }
   }
+}
+
+// Active navigation item styling
+.main-nav ul li.active-nav-item a {
+  color: map-get($theme-colors, accent-color); // Use accent color
+  font-weight: bold; // Make it bold
 }
 
 // --- Bottom Navbar ---
@@ -245,6 +303,10 @@ hr {
 //   }
 // }
 
+// Welcome section on homepage for spacing
+.welcome-section {
+  margin-bottom: $spacing-unit * 1.5; // Increase bottom margin significantly
+}
 
 // --- Layout Adjustments ---
 .page-content {
@@ -262,55 +324,124 @@ hr {
 .post-list {
   list-style: none;
   padding-left: 0;
+
   li {
-    background: map-get($theme-colors, secondary-bg); // Card-like background for posts
-    padding: $spacing-unit / 1.5;
+    background: map-get($theme-colors, secondary-bg);
     border-radius: 5px;
     margin-bottom: $spacing-unit;
-    border: 1px solid darken(map-get($theme-colors, secondary-bg), 5%);
+    border: 1px solid darken(map-get($theme-colors, secondary-bg), 10%); // Slightly more visible border
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); // Subtle default shadow
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    // Padding is removed from LI as it's now on .post-card-content
 
-    h3 {
-      margin-top: 0; // Remove top margin for h3 inside li
-      margin-bottom: $spacing-unit / 3;
-      a.post-link {
-        text-decoration: none;
-        color: map-get($theme-colors, primary-text); // Ensure title is clearly visible
-        &:hover {
-          color: map-get($theme-colors, accent-color);
-        }
-      }
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.25); // Slightly stronger hover shadow
     }
-    .post-meta {
-      display: block; // Ensure it takes its own line or use flex for inline with other meta
-      font-size: $small-font-size;
-      color: $grey-color;
-      margin-bottom: $spacing-unit / 2;
-    }
-    // Excerpt styling
+  }
+}
+
+// Styles for the new thumbnail container
+.post-card-thumbnail {
+  width: 100%;
+  max-height: 200px;
+  overflow: hidden;
+  margin-bottom: $spacing-unit / 2; // Space between image and text content
+  border-radius: 5px 5px 0 0; // Round top corners if image is at the very top
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 0; // Reset image radius if container handles it
+    margin: 0; // Reset default image margin
+  }
+}
+
+// The link now wraps thumbnail and content
+a.post-card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+
+  &:hover, &:focus {
+    text-decoration: none;
+  }
+
+  // Title hover effect is now on the link hovering the content part
+  &:hover .post-card-content h3 {
+    color: map-get($theme-colors, accent-color);
+  }
+}
+
+// New container for text content, to handle padding
+.post-card-content {
+  padding: $spacing-unit / 1.5;
+
+  h3 {
+    color: map-get($theme-colors, primary-text);
+    margin-top: 0;
+    margin-bottom: $spacing-unit / 3;
+  }
+
+  .post-meta {
+    display: block;
+    font-size: $small-font-size;
+    color: $grey-color;
+    margin-bottom: $spacing-unit / 2;
+  }
+
+  .post-excerpt {
     p {
-        color: lighten($text-color, 10%); // Slightly lighter text for excerpt
-        font-size: 0.95em;
+      color: lighten($text-color, 10%);
+      font-size: 0.95em;
+      &:last-child {
+        margin-bottom: 0;
+      }
     }
   }
 }
 
 // Basic responsiveness for header nav (example)
-@media screen and (max-width: 600px) { // $on-palm or similar
+// This media query handles screens where the bottom navbar is typically visible
+@media screen and (max-width: 767px) {
+  .site-header .wrapper {
+    justify-content: center; // Center site title when nav links and search are hidden
+  }
+
   .main-nav ul {
-    // Example: Hide text links and only show search, or implement hamburger
-    // For now, they will wrap or overflow. This needs a JS solution for robust handling.
-    // display: none; // This would hide the nav links on small screens
+    display: none; // Hide the list of links
   }
-  .main-nav li {
-    margin-left: 10px; // Reduce margin on smaller screens
-  }
+
   .main-nav .search-icon {
-    margin-left: 15px; // Reduce margin
+    display: none; // Hide search icon in top bar
   }
+
+  // .main-nav li - no longer needed if ul is hidden.
+  // .main-nav .search-icon - no longer needed if search-icon is hidden.
+
   .site-title {
-    font-size: 1.1em;
+    font-size: 1.1em; // Keep smaller title (ensure this is not overridden by base)
+    margin: 0; // Remove any default margins if they exist to help centering
+  }
+
+  // Adjustments for smaller screens (e.g. $on-palm, typically 600px)
+  // This can be nested or separate. For simplicity, keeping some overrides here for 600px.
+  @media screen and (max-width: 600px) {
+    .site-title {
+      font-size: 1.0em; // Even smaller title on very small screens
+    }
+    // Header font size adjustments for very small screens
+    h1, .h1 {
+      font-size: 1.8em;
+    }
+    h2 {
+      font-size: 1.5em;
+    }
   }
 }
+
 
 // Ensure the content wrapper takes full width available in header/footer
 .wrapper {

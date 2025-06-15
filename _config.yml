@@ -54,4 +54,4 @@ plugins:
 #   - vendor/ruby/
 
 minima:
-  date_format: "%-d %B %Y"
+  date_format: "%d %B %Y"
