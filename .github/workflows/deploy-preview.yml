@@ -3,7 +3,11 @@ name: Deploy Preview
 on:
   push:
     branches-ignore:
-      - main # Or your default branch
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main # Or your default branch where PRs are merged
 
 jobs:
   build:
