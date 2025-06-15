@@ -8,11 +8,15 @@ import re # Import regex for sanitizing filenames
 # --- Configuration from Environment Variables ---
 # The GH_REPO variable will be automatically set by GitHub Actions if running in the same repo
 # Otherwise, you might need to manually set it if discussions are in a different repo
-github_repo_env = os.environ.get('GH_REPO')
-if github_repo_env is None:
-    print("Error: GH_REPO environment variable not set. This script requires the GH_REPO environment variable to be set in the format OWNER/REPOSITORY_NAME.")
-    exit(1)
-REPO_OWNER, REPO_NAME = github_repo_env.split('/')
+# GITHUB_REPO_ENV = os.environ.get('GH_REPO') # Original line commented out
+# if GITHUB_REPO_ENV is None:
+#     print("Error: GH_REPO environment variable not set. This script requires the GH_REPO environment variable to be set in the format OWNER/REPOSITORY_NAME.")
+#     exit(1)
+
+# MODIFIED: Hardcoded repository owner and name as requested
+REPO_OWNER = 'marakujan'
+REPO_NAME = 'siedem.it'
+
 GITHUB_TOKEN = os.environ.get('GH_PAT') # MODIFIED: Changed from GITHUB_TOKEN to GH_PAT
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 GEMINI_MODEL_NAME = "gemini-1.5-flash" # Recommended for speed and cost-effectiveness
@@ -57,7 +61,7 @@ def get_single_discussion(discussion_node_id):
           createdAt
           lastEditedAt
           bodyHTML # Use bodyHTML if you want HTML content to be processed by LLM
-                   # Use 'body' if you want raw Markdown
+                        # Use 'body' if you want raw Markdown
           category {
             name
           }
