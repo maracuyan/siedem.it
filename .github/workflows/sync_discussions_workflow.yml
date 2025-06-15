@@ -38,7 +38,8 @@ jobs:
             echo "DISCUSSION_NODE_ID=${{ github.event.comment.discussion.node_id }}" >> $GITHUB_ENV
           fi
       - name: Debug Discussion Node ID
-        run: echo "DISCUSSION_NODE_ID from env is: ${{ env.DISCUSSION_NODE_ID }}"
+        run: |
+          echo "DISCUSSION_NODE_ID from env is: ${{ env.DISCUSSION_NODE_ID }}"
       - name: Run Sync Script
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
