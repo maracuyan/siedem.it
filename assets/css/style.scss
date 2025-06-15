@@ -1,0 +1,55 @@
+---
+---
+@import "minima"; // Or "{{ site.theme }}" if minima is specified in _config.yml
+
+// Basic dark theme overrides
+body {
+  background-color: #121212;
+  color: #e0e0e0;
+  line-height: 1.6;
+}
+
+a {
+  color: #bb86fc;
+}
+
+a:hover {
+  color: #9e67e8;
+}
+
+// Header styles (initial, can be refined)
+.site-header {
+  background-color: rgba(31, 31, 31, 0.85); // Semi-transparent
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); // For Safari
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 1px solid #333; // Keep the border
+}
+
+.site-title, .site-title:visited {
+  color: #e0e0e0;
+}
+
+.site-nav .page-link {
+  color: #e0e0e0;
+}
+
+.site-nav .page-link:hover {
+  color: #bb86fc;
+}
+
+// Footer styles (initial, can be refined)
+.site-footer {
+  border-top: 1px solid #333;
+  padding: 20px 0;
+}
+
+// Basic code block styling for dark theme
+pre, code {
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  border: 1px solid #333;
+  border-radius: 4px;
+}
