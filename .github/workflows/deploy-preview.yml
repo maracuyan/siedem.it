@@ -15,7 +15,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-           ruby-version: '3.1' # Specify a Ruby version compatible with your Gemfile.lock or remove for default
+          ruby-version: '3.1' # Specify a Ruby version compatible with your Gemfile.lock or remove for default
           bundler-cache: true # Runs bundle install and caches gems
 
       - name: Build Jekyll site
