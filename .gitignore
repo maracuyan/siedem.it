@@ -3,3 +3,26 @@ _site
 .jekyll-cache
 .jekyll-metadata
 vendor
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+VENV/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.nox/
+.hypothesis/
+.pytest_cache/
+coverage.xml
+htmlcov/
+*.egg-info/
+.installed.cfg
+*.egg

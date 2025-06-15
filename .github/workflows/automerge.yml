@@ -1,57 +1,47 @@
 name: Auto Merge
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-    branches:
-      - main # Or your default branch
+  workflow_run:
+    # This workflow will run when the "Deploy Preview" workflow completes.
+    # Adjust "Deploy Preview" to the exact name of the workflow that needs to pass before automerge.
+    workflows: ["Deploy Preview"]
+    types:
+      - completed
 
 jobs:
   automerge:
     runs-on: ubuntu-latest
-    if: github.event.pull_request && (github.event.pull_request.draft == false || github.event.action == 'ready_for_review')
+    # This condition ensures the automerge job only runs if the triggering workflow_run (e.g., Deploy Preview)
+    # completed successfully.
+    if: github.event.workflow_run.conclusion == 'success'
     permissions:
-      contents: write
-      pull-requests: write
+      contents: write # Needed to merge the PR and delete the branch
+      pull-requests: write # Needed to interact with the PR (read details, merge)
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }} # Pass token for check fetching
-
-      - name: Wait For Status Checks
-        uses: WyriHaximus/github-action-wait-for-status-checks@v2
-        id: waitforstatuschecks # Give an id to potentially access outputs
-        with:
-          githubToken: ${{ secrets.GITHUB_TOKEN }}
-          # This should be the name of THIS workflow's job as it appears in status checks.
-          # If the job name is 'automerge' and the workflow file name is 'automerge.yml',
-          # the check name might be 'automerge' or 'Auto Merge / automerge'.
-          # Let's assume the job name 'automerge' is sufficient.
-          ignoreChecks: |
-            automerge
-            Auto Merge
-          checkInterval: 15
-          timeoutSeconds: 900
-          runningOnPullRequestOnly: true
-          # Optional: Fail if there are no other checks to wait for (e.g. a brand new PR with no other workflows)
-          # failWhenNoChecks: true
+          # A token is needed to interact with the repository, including fetching PR details
+          # and performing the merge operation.
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
-        # This step will only run if the 'Wait For Status Checks' step succeeds
-        if: steps.waitforstatuschecks.outputs.status == 'success'
         uses: actions/setup-python@v3
         with:
-          python-version: '3.x'
+          python-version: '3.x' # Use a recent stable Python 3 version
 
       - name: Install dependencies
-        if: steps.waitforstatuschecks.outputs.status == 'success'
-        run: pip install PyGithub
+        run: pip install PyGithub # Install the PyGithub library for interacting with the GitHub API
 
       - name: Run automerge script
-        if: steps.waitforstatuschecks.outputs.status == 'success'
+        # The script will be run with environment variables providing necessary context
         env:
+          # GITHUB_TOKEN is required for authentication with the GitHub API
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }} # Updated
+          # PR_NUMBER is retrieved from the workflow_run event, specifically the first pull request associated
+          # with the completed workflow run.
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          # GITHUB_REPOSITORY provides the context of the current repository (e.g., 'owner/repo-name')
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: python .github/scripts/automerge.py
+

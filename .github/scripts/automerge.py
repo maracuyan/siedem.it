@@ -2,6 +2,9 @@ import os
 import sys
 from github import Github
 
+# Name of the current workflow, to be excluded from checks
+WORKFLOW_NAME = "Auto Merge"
+
 def automerge():
     print("Automerge script started.")
 
@@ -37,8 +40,66 @@ def automerge():
     print(f"Checking PR #{pull_request.number}: {pull_request.title}")
     print(f"PR URL: {pull_request.html_url}")
 
-    # The 'Wait For Status Checks' action in the workflow should ensure checks have passed.
-    # This is a final safeguard using GitHub's own mergeability status.
+    # Check if the PR is already merged or closed
+    if pull_request.merged:
+        print(f"PR #{pull_request.number} is already merged.")
+        sys.exit(0)
+    if pull_request.closed_at:
+        print(f"PR #{pull_request.number} is closed and cannot be merged.")
+        sys.exit(0)
+    if pull_request.draft:
+        print(f"PR #{pull_request.number} is a draft and cannot be merged.")
+        sys.exit(0)
+
+    # First, verify all explicit checks (check suites and statuses)
+    commit_sha = pull_request.head.sha
+    print(f"Head commit SHA: {commit_sha}")
+
+    all_explicit_checks_passed = True
+
+    # Verify check suites
+    try:
+        check_suites = repo.get_commit(commit_sha).get_check_suites()
+        print(f"Found {check_suites.totalCount} check suites.")
+        for suite in check_suites:
+            # Exclude the current automerge workflow itself from the checks
+            if suite.app.name == WORKFLOW_NAME or suite.app.id == g.get_app().id: # More robust check for current workflow
+                print(f"Skipping check suite from workflow: {suite.app.name} (Status: {suite.status}, Conclusion: {suite.conclusion})")
+                continue
+
+            print(f"Check Suite: {suite.app.name}, Status: {suite.status}, Conclusion: {suite.conclusion}")
+            if suite.conclusion != 'success':
+                print(f"Check suite '{suite.app.name}' did not succeed. Conclusion: {suite.conclusion}.")
+                all_explicit_checks_passed = False
+    except Exception as e:
+        print(f"Error fetching check suites: {e}")
+        all_explicit_checks_passed = False # Treat errors in fetching as checks not passed
+
+    # Verify statuses (legacy API, but some tools still use it)
+    try:
+        statuses = repo.get_commit(commit_sha).get_statuses()
+        print(f"Found {statuses.totalCount} statuses.")
+        for status in statuses:
+            # Exclude the current automerge workflow itself from the statuses
+            if status.context == WORKFLOW_NAME or (status.creator and status.creator.login == "github-actions"):
+                print(f"Skipping status: {status.context} (State: {status.state})")
+                continue
+
+            print(f"Status Context: {status.context}, State: {status.state}")
+            if status.state != 'success':
+                print(f"Status '{status.context}' did not succeed. State: {status.state}.")
+                all_explicit_checks_passed = False
+    except Exception as e:
+        print(f"Error fetching statuses: {e}")
+        all_explicit_checks_passed = False # Treat errors in fetching as checks not passed
+
+
+    if not all_explicit_checks_passed:
+        print(f"PR #{pull_request.number} (commit {commit_sha}) will not be merged because not all explicit checks passed.")
+        sys.exit(0) # Exit gracefully, this is not an error in the script itself
+
+
+    # Now, check GitHub's own mergeability status as a final safeguard
     # Refresh the PR data to ensure mergeability status is current
     pull_request.update()
 
@@ -51,28 +112,24 @@ def automerge():
     # 'unknown' -> still being computed
     # 'blocked' -> blocked by failing checks or other restrictions
     # 'unstable' -> non-critical checks failed, but mergeable
-    # 'draft' -> PR is a draft
+    # 'draft' -> PR is a draft (already checked above)
     # 'behind' -> head branch is behind the base branch
-    # We primarily care that it's not 'dirty', 'blocked', or 'draft' (though draft should be caught by workflow if-condition)
-    # 'clean' is ideal. 'unstable' might be acceptable. 'behind' can sometimes be merged if no conflicts.
 
-    if pull_request.merged:
-        print(f"PR #{pull_request.number} is already merged.")
-        sys.exit(0)
-
-    if not pull_request.mergeable or pull_request.mergeable_state in ['dirty', 'blocked']:
-        print(f"PR #{pull_request.number} is not mergeable or in a non-mergeable state.")
+    if not pull_request.mergeable:
+        print(f"PR #{pull_request.number} is not mergeable according to GitHub API.")
         print(f"Mergeable: {pull_request.mergeable}, Mergeable State: '{pull_request.mergeable_state}'.")
-        # Potentially list failing checks if state is 'blocked' and info is available,
-        # but the workflow's "Wait For Status Checks" should have already handled this.
         sys.exit(0) # Not an error for the script, but PR cannot be merged.
 
+    if pull_request.mergeable_state in ['dirty', 'blocked']:
+        print(f"PR #{pull_request.number} is in a non-mergeable state: '{pull_request.mergeable_state}'.")
+        sys.exit(0)
+
     if pull_request.mergeable_state == 'unknown':
-        print(f"PR #{pull_request.number} mergeable state is 'unknown'. Retrying might be needed or GitHub is still computing. Exiting.")
+        print(f"PR #{pull_request.number} mergeable state is 'unknown'. GitHub is still computing. Exiting.")
         sys.exit(0) # Give it time, or check GitHub UI.
 
-    # If we reach here, the PR is considered mergeable by GitHub's API
-    print(f"PR #{pull_request.number} (commit {pull_request.head.sha}) is deemed mergeable by GitHub.")
+    # If we reach here, all explicit checks passed and the PR is considered mergeable by GitHub's API
+    print(f"PR #{pull_request.number} (commit {pull_request.head.sha}) is deemed mergeable by GitHub and all checks passed.")
     try:
         print(f"Attempting to merge PR #{pull_request.number}...")
         # Using a descriptive commit title and message
@@ -98,6 +155,7 @@ def automerge():
         if hasattr(e, 'data'):
             print(f"GitHub API Error Data: {e.data}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     automerge()

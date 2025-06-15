@@ -1,0 +1,51 @@
+name: Sync Discussion to Blog Post
+
+on:
+  discussion:
+    types: [created, edited]
+
+jobs:
+  sync_and_publish:
+    # Only run if the discussion is in a specific category (e.g., 'News', 'Blog Posts')
+    # IMPORTANT: User needs to update 'YOUR_DISCUSSION_CATEGORY' to their desired category name.
+    # If the category name has spaces, it should be enclosed in quotes.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to commit changes back to the repo
+      discussions: read # Required to read discussion content (already specified for PAT)
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x' # Use a recent Python 3 version
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests PyYAML google-generativeai
+
+      - name: Run Sync Script
+        env:
+          # GITHUB_REPO is automatically set by Actions
+          # GITHUB_TOKEN: Using GH_PAT as per user's setup for script's GraphQL calls
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_DISCUSSION_ID: ${{ github.event.discussion.node_id }}
+          GITHUB_DISCUSSION_CATEGORY_NAME: ${{ github.event.discussion.category.name }}
+        run: python sync_discussions.py
+
+      - name: Commit and Push Blog Post
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'actions-bot@users.noreply.github.com'
+          # Check if there are changes in _posts/
+          if ! git diff --quiet _posts/; then
+            git add _posts/*.md
+            git commit -m "Automated: Add/update blog post from discussion '${{ github.event.discussion.title }}'"
+            git push
+          else
+            echo "No changes to commit in _posts/ directory."
+          fi
