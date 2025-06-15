@@ -1,161 +1,232 @@
 import os
-import sys
-from github import Github
+import requests
+import yaml
+from datetime import datetime
+import google.generativeai as genai
+import re # Import regex for sanitizing filenames
 
-# Name of the current workflow, to be excluded from checks
-WORKFLOW_NAME = "Auto Merge"
+# --- Configuration from Environment Variables ---
+# The GH_REPO variable will be automatically set by GitHub Actions if running in the same repo
+# Otherwise, you might need to manually set it if discussions are in a different repo
+github_repo_env = os.environ.get('GH_REPO')
+if github_repo_env is None:
+    print("Error: GH_REPO environment variable not set. This script requires the GH_REPO environment variable to be set in the format OWNER/REPOSITORY_NAME.")
+    exit(1)
+REPO_OWNER, REPO_NAME = github_repo_env.split('/')
+GITHUB_TOKEN = os.environ.get('GH_PAT') # MODIFIED: Changed from GITHUB_TOKEN to GH_PAT
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+GEMINI_MODEL_NAME = "gemini-1.5-flash" # Recommended for speed and cost-effectiveness
+# Consider "gemini-1.5-pro" for higher quality but potentially higher cost/latency
 
-def automerge():
-    print("Automerge script started.")
+# --- New: Get the specific discussion ID from environment variable ---
+# This ID comes from the GitHub Actions event payload
+TARGET_DISCUSSION_ID = os.environ.get('GITHUB_DISCUSSION_ID')
+if not TARGET_DISCUSSION_ID:
+    print("Error: GITHUB_DISCUSSION_ID environment variable not set. This script requires a target discussion ID.")
+    # Exit gracefully if the expected environment variable is not found
+    exit(1)
 
-    github_token = os.environ.get("GITHUB_TOKEN")
-    pr_number_str = os.environ.get("PR_NUMBER")
-    repo_name = os.environ.get("GITHUB_REPOSITORY")
+# --- Setup Gemini ---
+try:
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel(GEMINI_MODEL_NAME)
+except Exception as e:
+    print(f"Error configuring Gemini API: {e}")
+    # Exit if Gemini API setup fails, as it's critical for the script
+    exit(1)
 
-    if not github_token:
-        print("Error: GITHUB_TOKEN not found in environment variables.")
-        sys.exit(1)
-    if not pr_number_str:
-        print("Error: PR_NUMBER not found in environment variables.")
-        sys.exit(1)
-    if not repo_name:
-        print("Error: GITHUB_REPOSITORY not found in environment variables.")
-        sys.exit(1)
+# --- GitHub API Setup ---
+GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
+HEADERS = {
+    'Authorization': f'token {GITHUB_TOKEN}', # This will now use GH_PAT
+    'Content-Type': 'application/json',
+}
 
+def get_single_discussion(discussion_node_id):
+    """
+    Fetches a single GitHub Discussion by its GraphQL Node ID.
+    This uses the GitHub GraphQL API to get detailed information about the discussion.
+    """
+    query = """
+    query($nodeId: ID!) {
+      node(id: $nodeId) {
+        ... on Discussion {
+          id
+          title
+          url
+          createdAt
+          lastEditedAt
+          bodyHTML # Use bodyHTML if you want HTML content to be processed by LLM
+                   # Use 'body' if you want raw Markdown
+          category {
+            name
+          }
+          author {
+            login
+          }
+          comments(first: 100) { # Fetching first 100 comments
+            nodes {
+              bodyHTML
+              createdAt
+              author {
+                login
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    variables = {"nodeId": discussion_node_id}
     try:
-        pr_number = int(pr_number_str)
-    except ValueError:
-        print(f"Error: Invalid PR_NUMBER: {pr_number_str}. Must be an integer.")
-        sys.exit(1)
+        response = requests.post(GITHUB_GRAPHQL_URL, headers=HEADERS, json={'query': query, 'variables': variables})
+        response.raise_for_status() # Raise an exception for HTTP errors
+        data = response.json()
+        return data['data']['node']
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching discussion from GitHub API: {e}")
+        return None
+    except KeyError:
+        print(f"Unexpected response structure from GitHub API for discussion ID: {discussion_node_id}")
+        return None
 
-    g = Github(github_token)
+
+def generate_blog_post_with_gemini(discussion_title, combined_content, discussion_category):
+    """
+    Uses the Gemini LLM to transform the GitHub Discussion content into a blog post.
+    The prompt is crucial here for guiding the LLM's output.
+    """
+    prompt = f"""
+    You are an AI assistant tasked with synthesizing GitHub Discussions and their comments into comprehensive and engaging blog posts for a news site.
+
+    Please take the following GitHub Discussion (which includes the original post and subsequent comments) and transform it into a single, cohesive blog post.
+    The goal is to create a well-rounded article that summarizes the entire conversation, including the main points from the initial discussion and key insights or differing opinions from the comments.
+    Focus on clarity, conciseness, and making it engaging for a general audience interested in tech news.
+    You can expand on points, rephrase for better flow, and summarize lengthy sections.
+    Acknowledge differing opinions if they are significant, but generally avoid mentioning specific user names unless critically important for context (and prefer generic attributions like "some users suggested...").
+    The output should be *only* the blog post content in Markdown format, ready to be embedded.
+    Ensure the generated content is well-structured with appropriate headings and paragraphs.
+    Do NOT include YAML front matter.
+    Do NOT include any introductory or concluding remarks outside the blog post content itself (e.g., "Here is your blog post:").
+    Do NOT include code blocks or triple backticks unless they are essential for the blog post's content.
+
+    GitHub Discussion Title: "{discussion_title}"
+    GitHub Discussion Category: "{discussion_category}"
+
+    Full Discussion Content (Original Post and Comments):
+    ```
+    {combined_content}
+    ```
+
+    Please generate the blog post content below:
+    """
+    print(f"Sending prompt to Gemini for discussion: '{discussion_title}'")
     try:
-        repo = g.get_repo(repo_name)
-        # It's good practice to re-fetch the PR to get the most up-to-date state
-        pull_request = repo.get_pull(pr_number)
+        # Fetch the response from the Gemini API
+        response = model.generate_content(prompt)
+        # Check if candidates and content exist before accessing text
+        if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
+            return response.candidates[0].content.parts[0].text
+        else:
+            print(f"Gemini API returned no content for discussion: '{discussion_title}'")
+            return f"**Error: Gemini API returned no content for this discussion.**\n\nOriginal Discussion:\n\n{combined_content}"
     except Exception as e:
-        print(f"Error getting repository or pull request: {e}")
-        sys.exit(1)
+        print(f"Error calling Gemini API for discussion '{discussion_title}': {e}")
+        return f"**Error: Could not generate content for this discussion using Gemini.**\n\nOriginal Discussion:\n\n{combined_content}"
 
-    print(f"Checking PR #{pull_request.number}: {pull_request.title}")
-    print(f"PR URL: {pull_request.html_url}")
+def sanitize_filename(title):
+    """
+    Sanitizes a string to be suitable for a filename.
+    Removes invalid characters and replaces spaces with hyphens.
+    """
+    # Replace spaces with hyphens
+    s = title.replace(" ", "-")
+    # Remove any characters that are not alphanumeric, hyphens, or underscores
+    s = re.sub(r'[^\w-]', '', s)
+    # Remove multiple consecutive hyphens
+    s = re.sub(r'-+', '-', s)
+    # Trim hyphens from start/end
+    s = s.strip('-')
+    return s
 
-    # Check if the PR is already merged or closed
-    if pull_request.merged:
-        print(f"PR #{pull_request.number} is already merged.")
-        sys.exit(0)
-    if pull_request.closed_at:
-        print(f"PR #{pull_request.number} is closed and cannot be merged.")
-        sys.exit(0)
-    if pull_request.draft:
-        print(f"PR #{pull_request.number} is a draft and cannot be merged.")
-        sys.exit(0)
+def main():
+    # Attempt to fetch the target discussion
+    discussion = get_single_discussion(TARGET_DISCUSSION_ID)
+    if not discussion:
+        print(f"Skipping post creation for discussion ID: {TARGET_DISCUSSION_ID} (not found or error during fetch).")
+        return # Exit if the discussion couldn't be fetched
 
-    # First, verify all explicit checks (check suites and statuses)
-    commit_sha = pull_request.head.sha
-    print(f"Head commit SHA: {commit_sha}")
+    posts_dir = '_posts'
+    # Ensure the _posts directory exists
+    os.makedirs(posts_dir, exist_ok=True)
 
-    all_explicit_checks_passed = True
+    discussion_id = discussion['id']
+    title = discussion['title']
+    # body = discussion['bodyHTML'] # Old way
+    created_at_str = discussion['createdAt']
+    category = discussion['category']['name'] if discussion['category'] else "Uncategorized"
+    author = discussion['author']['login'] if discussion['author'] else "Unknown Author"
+    last_edited_at_str = discussion.get('lastEditedAt', created_at_str) # Use edited date if available
 
-    # Verify check suites
+    # --- Construct combined content ---
+    original_body = discussion['bodyHTML']
+    combined_content = original_body
+
+    if discussion.get('comments') and discussion['comments'].get('nodes'):
+        combined_content += "\n\n--- Comments ---" # Add a header for comments section
+        for comment in discussion['comments']['nodes']:
+            comment_author = comment.get('author').get('login') if comment.get('author') else 'Unknown User'
+            comment_date = comment.get('createdAt', 'Unknown Date')
+            comment_body = comment.get('bodyHTML', '')
+            # Providing author & date for LLM's context; LLM is instructed not to usually mention users.
+            combined_content += f"\n\n**Comment by {comment_author} on {comment_date}:**\n{comment_body}"
+
+    # Format the date for the filename
+    filename_date = datetime.strptime(created_at_str, '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%m-%d')
+    # Sanitize the title for use in the filename
+    sanitized_title = sanitize_filename(title)
+    if not sanitized_title: # Fallback if sanitization results in an empty string
+        sanitized_title = f"discussion-{discussion_id[:8]}"
+
+    # Construct the full filepath for the Jekyll post
+    filepath = os.path.join(posts_dir, f"{filename_date}-{sanitized_title}.md")
+
+    print(f"Processing discussion: '{title}' (ID: {discussion_id}) with comments.")
+
+    # Call Gemini for content generation with combined content
+    blog_content = generate_blog_post_with_gemini(title, combined_content, category)
+
+    # Format dates for Jekyll front matter
+    jekyll_created_date = datetime.strptime(created_at_str, '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%m-%d %H:%M:%S %z')
+    jekyll_edited_date = datetime.strptime(last_edited_at_str, '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%m-%d %H:%M:%S %z')
+
+
+    # Prepare Jekyll front matter
+    front_matter = {
+        'layout': 'post', # Assuming you have a 'post' layout in your Jekyll theme
+        'title': title,
+        'date': jekyll_created_date,
+        'categories': [category], # Using the discussion category as a Jekyll category
+        'author': author,
+        'github_discussion_url': discussion['url'],
+        'github_discussion_id': discussion_id,
+        'github_last_edited_at': jekyll_edited_date, # Useful for idempotency checks or display
+        'llm_processed': True # Flag to indicate LLM processing
+    }
+
+    # Write the Jekyll post file
     try:
-        check_suites = repo.get_commit(commit_sha).get_check_suites()
-        print(f"Found {check_suites.totalCount} check suites.")
-        for suite in check_suites:
-            # Exclude the current automerge workflow itself from the checks
-            if suite.app.name == WORKFLOW_NAME or suite.app.id == g.get_app().id: # More robust check for current workflow
-                print(f"Skipping check suite from workflow: {suite.app.name} (Status: {suite.status}, Conclusion: {suite.conclusion})")
-                continue
-
-            print(f"Check Suite: {suite.app.name}, Status: {suite.status}, Conclusion: {suite.conclusion}")
-            if suite.conclusion != 'success':
-                print(f"Check suite '{suite.app.name}' did not succeed. Conclusion: {suite.conclusion}.")
-                all_explicit_checks_passed = False
-    except Exception as e:
-        print(f"Error fetching check suites: {e}")
-        all_explicit_checks_passed = False # Treat errors in fetching as checks not passed
-
-    # Verify statuses (legacy API, but some tools still use it)
-    try:
-        statuses = repo.get_commit(commit_sha).get_statuses()
-        print(f"Found {statuses.totalCount} statuses.")
-        for status in statuses:
-            # Exclude the current automerge workflow itself from the statuses
-            if status.context == WORKFLOW_NAME or (status.creator and status.creator.login == "github-actions"):
-                print(f"Skipping status: {status.context} (State: {status.state})")
-                continue
-
-            print(f"Status Context: {status.context}, State: {status.state}")
-            if status.state != 'success':
-                print(f"Status '{status.context}' did not succeed. State: {status.state}.")
-                all_explicit_checks_passed = False
-    except Exception as e:
-        print(f"Error fetching statuses: {e}")
-        all_explicit_checks_passed = False # Treat errors in fetching as checks not passed
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write('---\n')
+            # Dump the front matter into YAML format
+            yaml.dump(front_matter, f, allow_unicode=True, default_flow_style=False)
+            f.write('---\n\n')
+            f.write(blog_content) # Write the LLM-generated content
+        print(f"Successfully generated/updated post: {filepath}")
+    except IOError as e:
+        print(f"Error writing post file '{filepath}': {e}")
+        exit(1)
 
 
-    if not all_explicit_checks_passed:
-        print(f"PR #{pull_request.number} (commit {commit_sha}) will not be merged because not all explicit checks passed.")
-        sys.exit(0) # Exit gracefully, this is not an error in the script itself
-
-
-    # Now, check GitHub's own mergeability status as a final safeguard
-    # Refresh the PR data to ensure mergeability status is current
-    pull_request.update()
-
-    print(f"PR Mergeable: {pull_request.mergeable}")
-    print(f"PR Mergeable State: {pull_request.mergeable_state}")
-
-    # GitHub's mergeable_state can be:
-    # 'clean' -> merging is possible
-    # 'dirty' -> merge conflicts
-    # 'unknown' -> still being computed
-    # 'blocked' -> blocked by failing checks or other restrictions
-    # 'unstable' -> non-critical checks failed, but mergeable
-    # 'draft' -> PR is a draft (already checked above)
-    # 'behind' -> head branch is behind the base branch
-
-    if not pull_request.mergeable:
-        print(f"PR #{pull_request.number} is not mergeable according to GitHub API.")
-        print(f"Mergeable: {pull_request.mergeable}, Mergeable State: '{pull_request.mergeable_state}'.")
-        sys.exit(0) # Not an error for the script, but PR cannot be merged.
-
-    if pull_request.mergeable_state in ['dirty', 'blocked']:
-        print(f"PR #{pull_request.number} is in a non-mergeable state: '{pull_request.mergeable_state}'.")
-        sys.exit(0)
-
-    if pull_request.mergeable_state == 'unknown':
-        print(f"PR #{pull_request.number} mergeable state is 'unknown'. GitHub is still computing. Exiting.")
-        sys.exit(0) # Give it time, or check GitHub UI.
-
-    # If we reach here, all explicit checks passed and the PR is considered mergeable by GitHub's API
-    print(f"PR #{pull_request.number} (commit {pull_request.head.sha}) is deemed mergeable by GitHub and all checks passed.")
-    try:
-        print(f"Attempting to merge PR #{pull_request.number}...")
-        # Using a descriptive commit title and message
-        commit_title = f"{pull_request.title} (#{pull_request.number})"
-        commit_message = f"Auto-merged by Auto Merge action.\n\nOriginal PR message:\n{pull_request.body}"
-
-        pull_request.merge(merge_method="squash", commit_title=commit_title, commit_message=commit_message)
-        print(f"Successfully merged PR #{pull_request.number}.")
-
-        # Attempt to delete the branch
-        try:
-            branch_name = pull_request.head.ref
-            print(f"Attempting to delete branch: {branch_name}...")
-            git_ref = repo.get_git_ref(f"heads/{branch_name}")
-            git_ref.delete()
-            print(f"Successfully deleted branch: {branch_name}.")
-        except Exception as e:
-            print(f"Error deleting branch {branch_name}: {e}")
-            # Continue even if branch deletion fails, as merge was successful.
-
-    except Exception as e:
-        print(f"Error merging PR #{pull_request.number}: {e}")
-        if hasattr(e, 'data'):
-            print(f"GitHub API Error Data: {e.data}")
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    automerge()
+if __name__ == '__main__':
+    main()
