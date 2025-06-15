@@ -33,10 +33,18 @@ jobs:
         id: set_discussion_id
         run: |
           echo "Event name: ${{ github.event_name }}"
-          echo "Discussion object (for discussion event): ${{ toJson(github.event.discussion) }}"
-          echo "Comment object (for comment event): ${{ toJson(github.event.comment) }}"
-          echo "Discussion object via comment (for comment event): ${{ toJson(github.event.comment.discussion) }}"
+
+          EVENT_DISCUSSION_JSON="${{ toJson(github.event.discussion) }}"
+          echo "Discussion object (for discussion event): $EVENT_DISCUSSION_JSON"
+
+          EVENT_COMMENT_JSON="${{ toJson(github.event.comment) }}"
+          echo "Comment object (for comment event): $EVENT_COMMENT_JSON"
+
+          COMMENT_DISCUSSION_JSON="${{ toJson(github.event.comment.discussion) }}"
+          echo "Discussion object via comment (for comment event): $COMMENT_DISCUSSION_JSON"
+
           echo "--- End of debug echoes ---"
+
           if [[ "${{ github.event_name }}" == "discussion" ]]; then
             echo "DISCUSSION_NODE_ID=${{ github.event.discussion.node_id }}" >> $GITHUB_ENV
           elif [[ "${{ github.event_name }}" == "discussion_comment" ]]; then
