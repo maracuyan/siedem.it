@@ -14,7 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # Required to commit changes back to the repo
-      discussions: read # Required to read discussion content (already specified for PAT)
+      discussions: read # Required to read discussion content
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -22,37 +23,26 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x' # Use a recent Python 3 version
+          python-version: '3.x'
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install requests PyYAML google-generativeai
 
+      # ---- CORRECTED STEP ----
       - name: Set Discussion Node ID
         id: set_discussion_id
         run: |
-          echo "Event name: ${{ github.event_name }}"
+          echo "Event triggered: ${{ github.event_name }}"
+          # The discussion object is at the top level for both 'discussion' and 'discussion_comment' events.
+          # This single line works for both triggers.
+          echo "DISCUSSION_NODE_ID=${{ github.event.discussion.node_id }}" >> $GITHUB_ENV
 
-          EVENT_DISCUSSION_JSON="${{ toJson(github.event.discussion) }}"
-          echo "Discussion object for discussion event: $EVENT_DISCUSSION_JSON"
-
-          EVENT_COMMENT_JSON="${{ toJson(github.event.comment) }}"
-          echo "Comment object for comment event: $EVENT_COMMENT_JSON"
-
-          COMMENT_DISCUSSION_JSON="${{ toJson(github.event.comment.discussion) }}"
-          echo "Discussion object via comment for comment event: $COMMENT_DISCUSSION_JSON"
-
-          echo "--- End of debug echoes ---"
-
-          if [[ "${{ github.event_name }}" == "discussion" ]]; then
-            echo "DISCUSSION_NODE_ID=${{ github.event.discussion.node_id }}" >> $GITHUB_ENV
-          elif [[ "${{ github.event_name }}" == "discussion_comment" ]]; then
-            echo "DISCUSSION_NODE_ID=${{ github.event.comment.discussion.node_id }}" >> $GITHUB_ENV
-          fi
       - name: Debug Discussion Node ID
         run: |
           echo "DISCUSSION_NODE_ID from env is: ${{ env.DISCUSSION_NODE_ID }}"
+          
       - name: Run Sync Script
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
