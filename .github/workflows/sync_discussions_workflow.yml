@@ -17,18 +17,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # --- NEW DEBUGGING STEP 1 ---
-      # Check the initial state of the repository after checkout.
-      - name: Debug Initial State
-        run: |
-          echo "### Initial Directory Listing ###"
-          ls -laR
-          
-          echo -e "\n### Contents of .gitignore ###"
-          # This will show if _posts is being ignored from the start.
-          # If this command fails, it just means you don't have a .gitignore file, which is fine.
-          cat .gitignore || echo ".gitignore not found."
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -56,53 +44,25 @@ jobs:
           GITHUB_DISCUSSION_ID: ${{ env.DISCUSSION_NODE_ID }}
         run: python sync_discussions.py
 
-      # --- NEW DEBUGGING STEP 2 ---
-      # This is the most critical check. It runs AFTER your script.
-      # It will show us if the file was created and what Git thinks about it.
-      - name: Debug State After Script & Before Commit
-        id: debug_after_script
-        run: |
-          echo "### Directory Listing After Python Script ###"
-          # We expect to see the new .md file inside the _posts directory here.
-          ls -laR
-          
-          echo -e "\n### Git Status ###"
-          # This shows untracked files. If the new file is listed here, everything is working.
-          # If it's NOT listed here, it's almost certainly being ignored.
-          git status
-          
-          echo -e "\n### Git Status (Checking for IGNORED files) ###"
-          # This is the key command. If the new .md file appears here,
-          # you MUST remove '_posts' from your .gitignore file.
-          git status --ignored
-
-      # --- MODIFIED STEP 3 ---
-      # This step is now more verbose to show exactly what it's doing.
+      # --- CORRECTED COMMIT & PUSH STEP ---
+      # This version correctly handles both new (untracked) and modified files.
       - name: Commit and Push Blog Post
         run: |
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'actions-bot@users.noreply.github.com'
           
-          echo "### Checking for changes in _posts/ directory ###"
-          # We run the check and then decide what to do, with verbose logging.
-          if ! git diff --quiet _posts/; then
-            echo "✅ Changes detected in _posts/. Proceeding with commit."
-            
-            echo "--- Staging files... ---"
-            # The --verbose flag will show exactly which files are being added.
-            git add --verbose _posts/*.md
-            
-            echo "--- Git status after staging ---"
-            git status
-            
-            echo "--- Committing files... ---"
+          echo "### Staging any new or modified files in _posts/ ###"
+          # This command stages both new and modified files.
+          # It won't fail if there are no files that match.
+          git add _posts/*.md
+          
+          echo "### Checking if there is anything to commit ###"
+          # 'git diff --staged --quiet' checks if the staging area is empty.
+          # The '!' reverses the exit code, so the block runs if there are staged changes.
+          if ! git diff --staged --quiet; then
+            echo "✅ Staged changes found. Proceeding with commit."
             git commit -m "Automated: Add/update blog post from discussion '${{ github.event.discussion.title }}'"
-            
-            echo "--- Pushing to repository... ---"
             git push
-            echo "✅ Push command executed."
           else
-            echo "❌ No changes to commit in _posts/ directory."
-            echo "This likely means the created file is being ignored by .gitignore."
-            echo "Please check the output of 'Git Status (Checking for IGNORED files)' in the previous step."
+            echo "❌ No new or modified blog posts found to commit."
           fi
