@@ -8,9 +8,6 @@ on:
 
 jobs:
   sync_and_publish:
-    # Only run if the discussion is in a specific category (e.g., 'News', 'Blog Posts')
-    # IMPORTANT: User needs to update 'YOUR_DISCUSSION_CATEGORY' to their desired category name.
-    # If the category name has spaces, it should be enclosed in quotes.
     runs-on: ubuntu-latest
     permissions:
       contents: write # Required to commit changes back to the repo
@@ -19,6 +16,18 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      # --- NEW DEBUGGING STEP 1 ---
+      # Check the initial state of the repository after checkout.
+      - name: Debug Initial State
+        run: |
+          echo "### Initial Directory Listing ###"
+          ls -laR
+          
+          echo -e "\n### Contents of .gitignore ###"
+          # This will show if _posts is being ignored from the start.
+          # If this command fails, it just means you don't have a .gitignore file, which is fine.
+          cat .gitignore || echo ".gitignore not found."
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -30,13 +39,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests PyYAML google-generativeai
 
-      # ---- CORRECTED STEP ----
       - name: Set Discussion Node ID
         id: set_discussion_id
         run: |
           echo "Event triggered: ${{ github.event_name }}"
-          # The discussion object is at the top level for both 'discussion' and 'discussion_comment' events.
-          # This single line works for both triggers.
           echo "DISCUSSION_NODE_ID=${{ github.event.discussion.node_id }}" >> $GITHUB_ENV
 
       - name: Debug Discussion Node ID
@@ -50,15 +56,53 @@ jobs:
           GITHUB_DISCUSSION_ID: ${{ env.DISCUSSION_NODE_ID }}
         run: python sync_discussions.py
 
+      # --- NEW DEBUGGING STEP 2 ---
+      # This is the most critical check. It runs AFTER your script.
+      # It will show us if the file was created and what Git thinks about it.
+      - name: Debug State After Script & Before Commit
+        id: debug_after_script
+        run: |
+          echo "### Directory Listing After Python Script ###"
+          # We expect to see the new .md file inside the _posts directory here.
+          ls -laR
+          
+          echo -e "\n### Git Status ###"
+          # This shows untracked files. If the new file is listed here, everything is working.
+          # If it's NOT listed here, it's almost certainly being ignored.
+          git status
+          
+          echo -e "\n### Git Status (Checking for IGNORED files) ###"
+          # This is the key command. If the new .md file appears here,
+          # you MUST remove '_posts' from your .gitignore file.
+          git status --ignored
+
+      # --- MODIFIED STEP 3 ---
+      # This step is now more verbose to show exactly what it's doing.
       - name: Commit and Push Blog Post
         run: |
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'actions-bot@users.noreply.github.com'
-          # Check if there are changes in _posts/
+          
+          echo "### Checking for changes in _posts/ directory ###"
+          # We run the check and then decide what to do, with verbose logging.
           if ! git diff --quiet _posts/; then
-            git add _posts/*.md
+            echo "✅ Changes detected in _posts/. Proceeding with commit."
+            
+            echo "--- Staging files... ---"
+            # The --verbose flag will show exactly which files are being added.
+            git add --verbose _posts/*.md
+            
+            echo "--- Git status after staging ---"
+            git status
+            
+            echo "--- Committing files... ---"
             git commit -m "Automated: Add/update blog post from discussion '${{ github.event.discussion.title }}'"
+            
+            echo "--- Pushing to repository... ---"
             git push
+            echo "✅ Push command executed."
           else
-            echo "No changes to commit in _posts/ directory."
+            echo "❌ No changes to commit in _posts/ directory."
+            echo "This likely means the created file is being ignored by .gitignore."
+            echo "Please check the output of 'Git Status (Checking for IGNORED files)' in the previous step."
           fi
