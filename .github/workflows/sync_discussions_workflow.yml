@@ -35,13 +35,13 @@ jobs:
           echo "Event name: ${{ github.event_name }}"
 
           EVENT_DISCUSSION_JSON="${{ toJson(github.event.discussion) }}"
-          echo "Discussion object (for discussion event): $EVENT_DISCUSSION_JSON"
+          echo "Discussion object for discussion event: $EVENT_DISCUSSION_JSON"
 
           EVENT_COMMENT_JSON="${{ toJson(github.event.comment) }}"
-          echo "Comment object (for comment event): $EVENT_COMMENT_JSON"
+          echo "Comment object for comment event: $EVENT_COMMENT_JSON"
 
           COMMENT_DISCUSSION_JSON="${{ toJson(github.event.comment.discussion) }}"
-          echo "Discussion object via comment (for comment event): $COMMENT_DISCUSSION_JSON"
+          echo "Discussion object via comment for comment event: $COMMENT_DISCUSSION_JSON"
 
           echo "--- End of debug echoes ---"
 
