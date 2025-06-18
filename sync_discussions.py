@@ -170,7 +170,7 @@ def main():
     created_at_str = discussion['createdAt']
     category = discussion['category']['name'] if discussion['category'] else "Uncategorized"
     author = discussion['author']['login'] if discussion['author'] else "Unknown Author"
-    last_edited_at_str = discussion.get('lastEditedAt', created_at_str) # Use edited date if available
+    last_edited_at_str = discussion.get('lastEditedAt') or created_at_str # Correct logic
 
     # --- Construct combined content ---
     original_body = discussion['bodyHTML']
