@@ -5,51 +5,40 @@ from datetime import datetime
 import google.generativeai as genai
 import re # Import regex for sanitizing filenames
 
-# --- Configuration from Environment Variables ---
-# The GH_REPO variable will be automatically set by GitHub Actions if running in the same repo
-# Otherwise, you might need to manually set it if discussions are in a different repo
-# GITHUB_REPO_ENV = os.environ.get('GH_REPO') # Original line commented out
-# if GITHUB_REPO_ENV is None:
-#     print("Error: GH_REPO environment variable not set. This script requires the GH_REPO environment variable to be set in the format OWNER/REPOSITORY_NAME.")
-#     exit(1)
-
-# MODIFIED: Hardcoded repository owner and name as requested
+# --- Konfiguracja ze zmiennych środowiskowych ---
 REPO_OWNER = 'marakujan'
 REPO_NAME = 'siedem.it'
 
-GITHUB_TOKEN = os.environ.get('GH_PAT') # MODIFIED: Changed from GITHUB_TOKEN to GH_PAT
+GITHUB_TOKEN = os.environ.get('GH_PAT')
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-GEMINI_MODEL_NAME = "gemini-1.5-flash" # Recommended for speed and cost-effectiveness
-# Consider "gemini-1.5-pro" for higher quality but potentially higher cost/latency
+# ZMIANA: Model Gemini ustawiony na gemini-2.5-flash
+GEMINI_MODEL_NAME = "gemini-2.5-flash"
 
-# --- New: Get the specific discussion ID from environment variable ---
-# This ID comes from the GitHub Actions event payload
+# --- Pobierz ID konkretnej dyskusji ze zmiennej środowiskowej ---
 TARGET_DISCUSSION_ID = os.environ.get('GITHUB_DISCUSSION_ID')
 if not TARGET_DISCUSSION_ID:
-    print("Error: GITHUB_DISCUSSION_ID environment variable not set. This script requires a target discussion ID.")
-    # Exit gracefully if the expected environment variable is not found
+    print("Błąd: Zmienna środowiskowa GITHUB_DISCUSSION_ID nie jest ustawiona. Ten skrypt wymaga docelowego identyfikatora dyskusji.")
     exit(1)
 
-# --- Setup Gemini ---
+# --- Konfiguracja Gemini ---
 try:
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel(GEMINI_MODEL_NAME)
 except Exception as e:
-    print(f"Error configuring Gemini API: {e}")
-    # Exit if Gemini API setup fails, as it's critical for the script
+    print(f"Błąd konfiguracji API Gemini: {e}")
     exit(1)
 
-# --- GitHub API Setup ---
+# --- Konfiguracja API GitHub ---
 GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
 HEADERS = {
-    'Authorization': f'token {GITHUB_TOKEN}', # This will now use GH_PAT
+    'Authorization': f'token {GITHUB_TOKEN}',
     'Content-Type': 'application/json',
 }
 
 def get_single_discussion(discussion_node_id):
     """
-    Fetches a single GitHub Discussion by its GraphQL Node ID.
-    This uses the GitHub GraphQL API to get detailed information about the discussion.
+    Pobiera pojedynczą Dyskusję GitHub za pomocą jej ID węzła GraphQL.
+    Wykorzystuje API GraphQL GitHub, aby uzyskać szczegółowe informacje o dyskusji.
     """
     query = """
     query($nodeId: ID!) {
@@ -60,15 +49,14 @@ def get_single_discussion(discussion_node_id):
           url
           createdAt
           lastEditedAt
-          bodyHTML # Use bodyHTML if you want HTML content to be processed by LLM
-                        # Use 'body' if you want raw Markdown
+          bodyHTML
           category {
             name
           }
           author {
             login
           }
-          comments(first: 100) { # Fetching first 100 comments
+          comments(first: 100) {
             nodes {
               bodyHTML
               createdAt
@@ -84,151 +72,135 @@ def get_single_discussion(discussion_node_id):
     variables = {"nodeId": discussion_node_id}
     try:
         response = requests.post(GITHUB_GRAPHQL_URL, headers=HEADERS, json={'query': query, 'variables': variables})
-        response.raise_for_status() # Raise an exception for HTTP errors
+        response.raise_for_status() # Wyrzuć wyjątek dla błędów HTTP
         data = response.json()
-        return data['data']['node']
+        return data.get('data', {}).get('node')
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching discussion from GitHub API: {e}")
+        print(f"Błąd podczas pobierania dyskusji z API GitHub: {e}")
         return None
     except KeyError:
-        print(f"Unexpected response structure from GitHub API for discussion ID: {discussion_node_id}")
+        print(f"Nieoczekiwana struktura odpowiedzi z API GitHub dla ID dyskusji: {discussion_node_id}")
         return None
 
 
 def generate_blog_post_with_gemini(discussion_title, combined_content, discussion_category):
     """
-    Uses the Gemini LLM to transform the GitHub Discussion content into a blog post.
-    The prompt is crucial here for guiding the LLM's output.
+    Używa modelu Gemini LLM do przekształcenia treści Dyskusji GitHub w post blogowy.
+    Prompt jest kluczowy do pokierowania wyjściem LLM.
     """
+    # ZMIANA: Prompt w języku polskim
     prompt = f"""
-    You are an AI assistant tasked with synthesizing GitHub Discussions and their comments into comprehensive and engaging blog posts for a news site.
+Jesteś asystentem AI, którego zadaniem jest synteza dyskusji na GitHubie i ich komentarzy w kompleksowe i angażujące posty blogowe dla serwisu informacyjnego.
 
-    Please take the following GitHub Discussion (which includes the original post and subsequent comments) and transform it into a single, cohesive blog post.
-    The goal is to create a well-rounded article that summarizes the entire conversation, including the main points from the initial discussion and key insights or differing opinions from the comments.
-    Focus on clarity, conciseness, and making it engaging for a general audience interested in tech news.
-    You can expand on points, rephrase for better flow, and summarize lengthy sections.
-    Acknowledge differing opinions if they are significant, but generally avoid mentioning specific user names unless critically important for context (and prefer generic attributions like "some users suggested...").
-    The output should be *only* the blog post content in Markdown format, ready to be embedded.
-    Ensure the generated content is well-structured with appropriate headings and paragraphs.
-    Do NOT include YAML front matter.
-    Do NOT include any introductory or concluding remarks outside the blog post content itself (e.g., "Here is your blog post:").
-    Do NOT include code blocks or triple backticks unless they are essential for the blog post's content.
+Proszę, weź pod uwagę poniższą Dyskusję GitHub (która zawiera oryginalny post i kolejne komentarze) i przekształć ją w jeden spójny post blogowy.
+Celem jest stworzenie kompletnego artykułu, który podsumowuje całą rozmowę, włączając w to główne punkty z początkowej dyskusji oraz kluczowe spostrzeżenia lub odmienne opinie z komentarzy.
+Skoncentruj się na jasności, zwięzłości i angażowaniu szerokiej publiczności zainteresowanej wiadomościami technologicznymi.
+Możesz rozwijać punkty, przeformułowywać dla lepszego przepływu i streszczać długie sekcje.
+Uznaj odmienne opinie, jeśli są znaczące, ale generalnie unikaj wspominania konkretnych nazw użytkowników.
+Wynik powinien zawierać *wyłącznie* treść postu blogowego w formacie Markdown, gotową do osadzenia.
+Upewnij się, że wygenerowana treść jest dobrze ustrukturyzowana z odpowiednimi nagłówkami i akapitami.
+NIE dołączaj front matter w formacie YAML.
+NIE dołączaj żadnych wstępnych ani końcowych uwag poza samą treścią postu blogowego (np. "Oto Twój post blogowy:").
+NIE dołączaj bloków kodu ani potrójnych backticków, chyba że są one niezbędne dla treści postu blogowego.
 
-    GitHub Discussion Title: "{discussion_title}"
-    GitHub Discussion Category: "{discussion_category}"
+Tytuł Dyskusji GitHub: \"{discussion_title}\"
+Kategoria Dyskusji GitHub: \"{discussion_category}\"
 
-    Full Discussion Content (Original Post and Comments):
-    ```
-    {combined_content}
-    ```
+Pełna treść dyskusji (oryginalny post i komentarze):
 
-    Please generate the blog post content below:
-    """
-    print(f"Sending prompt to Gemini for discussion: '{discussion_title}'")
+{combined_content}
+
+
+Proszę wygeneruj treść postu blogowego poniżej:
+"""
+    print(f"Wysyłam prompt do Gemini dla dyskusji: '{discussion_title}'")
     try:
-        # Fetch the response from the Gemini API
         response = model.generate_content(prompt)
-        # Check if candidates and content exist before accessing text
         if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
             return response.candidates[0].content.parts[0].text
         else:
-            print(f"Gemini API returned no content for discussion: '{discussion_title}'")
-            return f"**Error: Gemini API returned no content for this discussion.**\n\nOriginal Discussion:\n\n{combined_content}"
+            print(f"API Gemini nie zwróciło żadnej treści dla dyskusji: '{discussion_title}'")
+            return f"**Błąd: API Gemini nie zwróciło żadnej treści dla tej dyskusji.**\n\nOryginalna Dyskusja:\n\n{combined_content}"
     except Exception as e:
-        print(f"Error calling Gemini API for discussion '{discussion_title}': {e}")
-        return f"**Error: Could not generate content for this discussion using Gemini.**\n\nOriginal Discussion:\n\n{combined_content}"
+        print(f"Błąd podczas wywoływania API Gemini dla dyskusji '{discussion_title}': {e}")
+        return f"**Błąd: Nie udało się wygenerować treści dla tej dyskusji za pomocą Gemini.**\n\nOryginalna Dyskusja:\n\n{combined_content}"
 
 def sanitize_filename(title):
     """
-    Sanitizes a string to be suitable for a filename.
-    Removes invalid characters and replaces spaces with hyphens.
+    Sanityzuje ciąg znaków, aby nadawał się na nazwę pliku.
     """
-    # Replace spaces with hyphens
     s = title.replace(" ", "-")
-    # Remove any characters that are not alphanumeric, hyphens, or underscores
     s = re.sub(r'[^\w-]', '', s)
-    # Remove multiple consecutive hyphens
     s = re.sub(r'-+', '-', s)
-    # Trim hyphens from start/end
     s = s.strip('-')
     return s
 
 def main():
-    # Attempt to fetch the target discussion
     discussion = get_single_discussion(TARGET_DISCUSSION_ID)
     if not discussion:
-        print(f"Skipping post creation for discussion ID: {TARGET_DISCUSSION_ID} (not found or error during fetch).")
-        return # Exit if the discussion couldn't be fetched
+        print(f"Pomijam tworzenie postu dla ID dyskusji: {TARGET_DISCUSSION_ID} (nie znaleziono lub błąd podczas pobierania).")
+        return
 
     posts_dir = '_posts'
-    # Ensure the _posts directory exists
     os.makedirs(posts_dir, exist_ok=True)
 
     discussion_id = discussion['id']
     title = discussion['title']
-    # body = discussion['bodyHTML'] # Old way
     created_at_str = discussion['createdAt']
-    category = discussion['category']['name'] if discussion['category'] else "Uncategorized"
-    author = discussion['author']['login'] if discussion['author'] else "Unknown Author"
-    last_edited_at_str = discussion.get('lastEditedAt') or created_at_str # Correct logic
+    category = discussion['category']['name'] if discussion.get('category') else "Uncategorized"
+    author = discussion['author']['login'] if discussion.get('author') else "Unknown Author"
 
-    # --- Construct combined content ---
+    last_edited_at_str = discussion.get('lastEditedAt') or created_at_str
+
+    # --- Zbuduj połączoną treść ---
     original_body = discussion['bodyHTML']
     combined_content = original_body
 
     if discussion.get('comments') and discussion['comments'].get('nodes'):
-        combined_content += "\n\n--- Comments ---" # Add a header for comments section
+        # ZMIANA: nagłówek sekcji komentarzy w języku angielskim
+        combined_content += "\n\n--- Comments ---\n"
         for comment in discussion['comments']['nodes']:
-            comment_author = comment.get('author').get('login') if comment.get('author') else 'Unknown User'
+            comment_author = comment.get('author', {}).get('login') or 'Unknown User'
             comment_date = comment.get('createdAt', 'Unknown Date')
             comment_body = comment.get('bodyHTML', '')
-            # Providing author & date for LLM's context; LLM is instructed not to usually mention users.
-            combined_content += f"\n\n**Comment by {comment_author} on {comment_date}:**\n{comment_body}"
+            # ZMIANA: Format komentarza w języku angielskim
+            combined_content += f"\n**Comment by {comment_author} on {comment_date}:**\n{comment_body}"
 
-    # Format the date for the filename
     filename_date = datetime.strptime(created_at_str, '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%m-%d')
-    # Sanitize the title for use in the filename
     sanitized_title = sanitize_filename(title)
-    if not sanitized_title: # Fallback if sanitization results in an empty string
+    if not sanitized_title:
         sanitized_title = f"discussion-{discussion_id[:8]}"
 
-    # Construct the full filepath for the Jekyll post
     filepath = os.path.join(posts_dir, f"{filename_date}-{sanitized_title}.md")
 
-    print(f"Processing discussion: '{title}' (ID: {discussion_id}) with comments.")
+    print(f"Przetwarzam dyskusję: '{title}' (ID: {discussion_id}) wraz z komentarzami.")
 
-    # Call Gemini for content generation with combined content
     blog_content = generate_blog_post_with_gemini(title, combined_content, category)
 
-    # Format dates for Jekyll front matter
     jekyll_created_date = datetime.strptime(created_at_str, '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%m-%d %H:%M:%S %z')
     jekyll_edited_date = datetime.strptime(last_edited_at_str, '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%m-%d %H:%M:%S %z')
 
-
-    # Prepare Jekyll front matter
     front_matter = {
-        'layout': 'post', # Assuming you have a 'post' layout in your Jekyll theme
+        'layout': 'post',
         'title': title,
         'date': jekyll_created_date,
-        'categories': [category], # Using the discussion category as a Jekyll category
+        'categories': [category],
         'author': author,
         'github_discussion_url': discussion['url'],
         'github_discussion_id': discussion_id,
-        'github_last_edited_at': jekyll_edited_date, # Useful for idempotency checks or display
-        'llm_processed': True # Flag to indicate LLM processing
+        'github_last_edited_at': jekyll_edited_date,
+        'llm_processed': True
     }
 
-    # Write the Jekyll post file
     try:
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write('---\n')
-            # Dump the front matter into YAML format
             yaml.dump(front_matter, f, allow_unicode=True, default_flow_style=False)
             f.write('---\n\n')
-            f.write(blog_content) # Write the LLM-generated content
-        print(f"Successfully generated/updated post: {filepath}")
+            f.write(blog_content)
+        print(f"Pomyślnie wygenerowano/zaktualizowano post: {filepath}")
     except IOError as e:
-        print(f"Error writing post file '{filepath}': {e}")
+        print(f"Błąd zapisu pliku postu '{filepath}': {e}")
         exit(1)
 
 
