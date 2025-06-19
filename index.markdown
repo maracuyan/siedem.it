@@ -3,16 +3,6 @@ layout: home
 list_title: "Posty" # This might be overridden or ignored by the new content below
 ---
 
-<div class="welcome-section">
-# Twoja codzienna dawka innowacji
-
-Od głębokich analiz AI po praktyczne recenzje sprzętu – tutaj znajdziesz wiedzę, która napędza postęp.
-
-[Zobacz Najnowsze Artykuły](#najnowsze-artykuly){: .cta-button}
-</div>
-
-## Najnowsze artykuły
-
 {% if site.posts.size > 0 %}
   <ul class="post-list">
     {% for post in site.posts limit:5 %}
