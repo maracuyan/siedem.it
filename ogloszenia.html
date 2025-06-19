@@ -1,0 +1,15 @@
+---
+layout: category
+permalink: /category/ogloszenia/
+category: ogloszenia
+---
+
+<h1>Category: {{ page.category }}</h1>
+
+<ul>
+  {% for post in site.categories[page.category] %}
+    <li>
+      <a href="{{ post.url }}">{{ post.title }}</a>
+    </li>
+  {% endfor %}
+</ul>
