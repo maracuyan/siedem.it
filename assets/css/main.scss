@@ -113,7 +113,7 @@ hr {
 }
 
 .site-header {
-  @apply fixed top-0 left-0 right-0 z-50 bg-opacity-80 backdrop-blur-sm -webkit-backdrop-filter: blur(10px) p-2;
+  @apply fixed top-0 left-0 right-0 z-50 bg-opacity-80 backdrop-blur-sm -webkit-backdrop-filter: blur(10px) p-2 border-b border-accent-color shadow-md;
 
   .wrapper {
     @apply flex justify-between items-center max-w-full;
