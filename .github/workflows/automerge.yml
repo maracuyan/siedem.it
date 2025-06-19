@@ -64,6 +64,14 @@ jobs:
           HEAD_SHA="${{ steps.branches.outputs.head_sha }}"
           WORKFLOW_RUN_ID="${{ steps.branches.outputs.workflow_run_id }}"
 
+          # Check if there are any unique commits in the head branch
+          UNIQUE_COMMITS=$(git rev-list --count $BASE_BRANCH..$HEAD_BRANCH)
+          if [[ "$UNIQUE_COMMITS" -eq 0 ]]; then
+            echo "No unique commits found in $HEAD_BRANCH compared to $BASE_BRANCH. Skipping PR creation."
+            echo "pr_number=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           TITLE="Auto-PR: Merge $HEAD_BRANCH to $BASE_BRANCH after successful Deploy Preview"
           BODY="This PR was automatically created after the 'Deploy Preview' workflow (run #$WORKFLOW_RUN_ID) succeeded for commit $HEAD_SHA on branch $HEAD_BRANCH."
 
