@@ -16,7 +16,7 @@
   </a> -->
   {% assign categories_to_display = "Ankiety|Blog|Na luzie|Ogłoszenia|Porady|Recenzje|Wiadomości" | split: "|" %}
   {% for category_name in categories_to_display %}
-    <a href="{{ site.baseurl }}/categories/{{ category_name | slugify }}/" class="nav-item">
+    <a href="{{ site.baseurl }}/category/{{ category_name | slugify }}/" class="nav-item">
       <svg width="24" height="24" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
       <span>{{ category_name }}</span>
     </a>

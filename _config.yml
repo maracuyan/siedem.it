@@ -53,6 +53,6 @@ plugins:
 #   - vendor/gems/
 #   - vendor/ruby/
 
-permalink: /:title
+permalink: /:categories/:title
 minima:
   date_format: "%d %B %Y"
