@@ -1,7 +1,7 @@
 ---
 author: maracuyan
 categories:
-- Wiadomości
+- wiadomosci
 date: '2025-06-15 22:06:02 '
 github_discussion_id: D_kwDOO8FI2s4AgQaU
 github_discussion_url: https://github.com/maracuyan/siedem.it/discussions/20
