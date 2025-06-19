@@ -2,20 +2,25 @@
 <html lang="{{ page.lang | default: site.lang | default: "en" }}">
 
   {%- include head.html -%}
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
   <body>
 
     {%- include header.html -%}
 
     <main class="page-content" aria-label="Content">
-      <div class="wrapper">
-        {{ content }}
+      <div class="wrapper container mx-auto grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="md:col-span-2">
+          {{ content }}
+        </div>
+        <div class="md:col-span-1">
+          {%- include sidebar.html -%}
+        </div>
       </div>
     </main>
 
     {%- include footer.html -%}
 
-    {%- include sidebar.html -%}
     <script src="{{ '/assets/js/main.js' | relative_url }}" defer></script>
   </body>
 
