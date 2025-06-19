@@ -1,5 +1,3 @@
----
----
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Nunito:wght@400;700&display=swap');
 
 @tailwind base;
@@ -255,12 +253,12 @@ a.post-card-link {
 }
 
 .wrapper {
-    max-width: -webkit-calc(800px - (#{$spacing-unit}));
-    max-width:         calc(800px - (#{$spacing-unit}));
+    max-width: -webkit-calc(800px - (theme('spacing.4')));
+    max-width:         calc(800px - (theme('spacing.4')));
     margin-right:  auto;
     margin-left:   auto;
-    padding-right: $spacing-unit / 2;
-    padding-left:  $spacing-unit / 2;
+    padding-right: theme('spacing.2');
+    padding-left:  theme('spacing.2');
     @extend %clearfix; // From Minima
 
     @media screen and (max-width: $on-laptop) { // Minima variable for laptop screens
