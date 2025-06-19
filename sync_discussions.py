@@ -185,7 +185,7 @@ def main():
         'layout': 'post',
         'title': title,
         'date': jekyll_created_date,
-        'categories': [category],
+        'categories': [category.lower()],
         'author': author,
         'github_discussion_url': discussion['url'],
         'github_discussion_id': discussion_id,
