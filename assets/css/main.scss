@@ -3,12 +3,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto:wght@400;700&display=swap');
 
 $theme-colors: (
-  primary-bg: #0D0D0D,
-  secondary-bg: #1A1A1A,
-  primary-text: #E0E0E0,
-  accent-color: #00A8FF,
-  link-color: #00A8FF,
-  link-hover-color: #40C4FF
+  "primary-bg": #0D0D0D,
+  "secondary-bg": #1A1A1A,
+  "primary-text": #E0E0E0,
+  "accent-color": #00A8FF,
+  "link-color": #00A8FF,
+  "link-hover-color": #40C4FF
 );
 
 // Minima theme variables (assuming these are available after import)
@@ -305,12 +305,12 @@ hr {
 
 // Welcome section on homepage for spacing
 .welcome-section {
-  margin-bottom: $spacing-unit * 1.5; // Increase bottom margin significantly
+  margin-bottom: $spacing-unit * 3; // Increase bottom margin significantly
 }
 
 // --- Layout Adjustments ---
 .page-content {
-  padding-top: 50px; // Adjusted for potentially taller header with new font/padding
+  padding-top: 100px; // Adjusted for potentially taller header with new font/padding
   padding-bottom: 50px; // Adjusted for bottom-navbar height (approx 40-45px + margin)
 
   // On desktop, bottom-navbar is hidden, so padding-bottom can be reduced.
