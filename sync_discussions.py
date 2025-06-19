@@ -102,6 +102,7 @@ Upewnij się, że wygenerowana treść jest dobrze ustrukturyzowana z odpowiedni
 NIE dołączaj front matter w formacie YAML.
 NIE dołączaj żadnych wstępnych ani końcowych uwag poza samą treścią postu blogowego (np. "Oto Twój post blogowy:").
 NIE dołączaj bloków kodu ani potrójnych backticków, chyba że są one niezbędne dla treści postu blogowego.
+NIE dołączaj tytułu H1, ponieważ tytuł już jest przypisany, twoim zadaniem jest rozpoczęcie artykułu od pierwszego akapitu do końca.
 
 Tytuł Dyskusji GitHub: \"{discussion_title}\"
 Kategoria Dyskusji GitHub: \"{discussion_category}\"
