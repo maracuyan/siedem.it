@@ -28,7 +28,9 @@ layout: default # Changed from 'base' to 'default' to match typical Minima struc
           </span>
         </span>
       {%- endif -%}
-      <span class="post-meta-reading-time"> • Estimated reading time: 5 minutes</span>
+      {% assign words = page.content | strip_html | number_of_words %}
+      {% assign read_time = words | divided_by: 200.0 | round %}
+      <span class="post-meta-reading-time"> • Estimated reading time: {{ read_time }} minutes</span>
     </div>
     {%- if page.author and site.data.authors[page.author] -%}
     <p class="post-author">By {{ site.data.authors[page.author].name }}</p>

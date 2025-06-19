@@ -111,9 +111,9 @@ hr {
 }
 
 .site-header {
-  @apply fixed top-0 left-0 right-0 z-50 bg-black bg-opacity-80 backdrop-blur-md -webkit-backdrop-filter: blur(10px) p-2 border-b border-accent-color shadow-md;
-  border-bottom: 1px solid var(--accent-color);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  @apply fixed top-0 left-0 right-0 z-50 bg-black bg-opacity-80 backdrop-blur-md -webkit-backdrop-filter: blur(10px) p-2 border-b-2 border-accent-color shadow-lg;
+  border-bottom: 2px solid var(--accent-color);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 
   .wrapper {
     @apply flex justify-between items-center max-w-full;

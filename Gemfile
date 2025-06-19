@@ -13,7 +13,7 @@ source "https://rubygems.org"
 group :jekyll_plugins do
   gem "github-pages", "~> 231" # Using a version compatible with current GitHub Pages
   gem "jekyll-feed", "~> 0.12"
-  gem "sass", "~> 3.8"
+  gem "sass", "~> 3.7.0"
 end
 
 # Windows and JRuby does not include zoneinfo files, so bundle the tzinfo-data gem
