@@ -1,18 +1,18 @@
 ---
 ---
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Nunito:wght@400;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 $theme-colors: (
-  "primary-bg": #0D0D0D,
-  "secondary-bg": #1A1A1A,
-  "primary-text": #E0E0E0,
-  "accent-color": #00A8FF,
-  "link-color": #00A8FF,
-  "link-hover-color": #40C4FF
+  "primary-bg": #121212,
+  "secondary-bg": #1E1E1E,
+  "primary-text": #FFFFFF,
+  "accent-color": #BB86FC,
+  "link-color": #BB86FC,
+  "link-hover-color": #D1B0FF
 );
 
 // Define custom colors using Tailwind's theme extension
@@ -27,15 +27,15 @@ $theme-colors: (
   }
 
   body {
-    @apply bg-primary-bg text-primary-text font-roboto leading-7;
+    @apply bg-primary-bg text-primary-text font-nunito leading-8 tracking-wide font-normal;
   }
 
   h1, .h1 {
-    @apply text-2xl font-bold;
+    @apply text-3xl font-bold;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-inter text-primary-text mb-2 tracking-wider;
+    @apply font-nunito text-primary-text mb-2 tracking-wider;
   }
 
   a {
@@ -114,6 +114,8 @@ hr {
 
 .site-header {
   @apply fixed top-0 left-0 right-0 z-50 bg-opacity-80 backdrop-blur-sm -webkit-backdrop-filter: blur(10px) p-2 border-b border-accent-color shadow-md;
+  border-bottom: 1px solid var(--accent-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
   .wrapper {
     @apply flex justify-between items-center max-w-full;
@@ -321,4 +323,17 @@ a.post-card-link {
   &.active {
     @apply block;
   }
+}
+
+.social-sharing {
+  @apply flex justify-center mt-4;
+
+  a {
+    @apply bg-gray-800 hover:bg-gray-700 text-primary-text font-bold py-2 px-4 rounded;
+    margin: 0 0.5em;
+  }
+}
+
+.post-author {
+  @apply text-gray-500 mt-2;
 }

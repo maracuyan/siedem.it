@@ -28,11 +28,18 @@ layout: default # Changed from 'base' to 'default' to match typical Minima struc
           </span>
         </span>
       {%- endif -%}
+      <span class="post-meta-reading-time"> • Estimated reading time: 5 minutes</span>
     </div>
+    {%- if page.author and site.data.authors[page.author] -%}
+    <p class="post-author">By {{ site.data.authors[page.author].name }}</p>
+    {%- endif -%}
   </header>
 
   <div class="post-container">
     <div class="post-content e-content" itemprop="articleBody">
+      <h2>Table of Contents</h2>
+      <div id="toc">
+        </div>
       {{ content }}
     </div>
   </div>
@@ -46,6 +53,12 @@ layout: default # Changed from 'base' to 'default' to match typical Minima struc
       {%- include comments.html -%}
     {% endif -%}
   {% endif -%}
+
+  <div class="social-sharing">
+    <a href="#">Facebook</a>
+    <a href="#">Twitter</a>
+    <a href="#">LinkedIn</a>
+  </div>
 
   <a class="u-url" href="{{ page.url | relative_url }}" hidden></a>
 </article>
