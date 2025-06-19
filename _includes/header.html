@@ -4,10 +4,13 @@
     <nav class="main-nav">
       <ul>
         <li {% if page.url == "/" %}class="active-nav-item"{% endif %}><a href="{{ "/" | relative_url }}">Strona Główna</a></li>
-        <li><a href="#">Kategorie</a></li>
-        <li><a href="#">Recenzje</a></li>
-        <li><a href="#">Tutoriale</a></li>
-        <li><a href="#">Kontakt</a></li>
+        <li><a href="/category/ankiety">Ankiety</a></li>
+        <li><a href="/category/blog">Blog</a></li>
+        <li><a href="/category/na-luzie">Na luzie</a></li>
+        <li><a href="/category/ogloszenia">Ogłoszenia</a></li>
+        <li><a href="/category/porady">Porady</a></li>
+        <li><a href="/category/recenzje">Recenzje</a></li>
+        <li><a href="/category/wiadomosci">Wiadomości</a></li>
         <li {% if page.url == "/about.html" or page.url == "/about/" %}class="active-nav-item"{% endif %}><a href="{{ "/about.html" | relative_url }}">O nas</a></li>
       </ul>
       <a href="#" class="search-icon" id="header-search-icon">
