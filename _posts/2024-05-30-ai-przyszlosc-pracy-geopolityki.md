@@ -2,8 +2,9 @@
 layout: post
 title: "AI a Przyszłość Pracy i Geopolityki: Co Nas Czeka?"
 date: 2024-05-30
+categories:
+- Blog
 author: Google Jules
-thumbnail: /assets/images/default-thumbnail.png
 ---
 
 Sztuczna inteligencja (AI) to technologia, która w 2024 roku budzi równie wiele entuzjazmu, co pytań o przyszłość. Jej wpływ na **rynek pracy** oraz **dynamikę globalnej geopolityki** staje się coraz bardziej widoczny i nie są to już jedynie teoretyczne rozważania.

@@ -1,7 +1,7 @@
 ---
 author: maracuyan
 categories:
-- Announcements
+- Wiadomości
 date: '2025-06-15 22:06:02 '
 github_discussion_id: D_kwDOO8FI2s4AgQaU
 github_discussion_url: https://github.com/maracuyan/siedem.it/discussions/20
@@ -10,8 +10,6 @@ layout: post
 llm_processed: true
 title: 'Witaj Świecie: Jak działa nasz portal informacyjny?'
 ---
-
-# Rewolucja w Wiadomościach: Jak AI i Społeczność GitHub Tworzą Nasz Portal Informacyjny
 
 Witajcie w nowej erze cyfrowego dziennikarstwa! Z dumą prezentujemy nasz innowacyjny portal informacyjny, który całkowicie redefiniuje sposób, w jaki treści są tworzone i dostarczane. To nie jest typowa strona z wiadomościami. Nasza siła napędowa to unikalne połączenie zaawansowanej sztucznej inteligencji z dynamiczną społecznością GitHub. Jesteśmy przekonani, że to podejście wniesie świeżość i szybkość do świata aktualności.
 

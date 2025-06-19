@@ -12,8 +12,6 @@ title: Ukraina stawia na swoje AI! Kyivstar rzuca rękawicę w wyścigu LLM-ów,
   już ma swoje asy w rękawie
 ---
 
-# Wyścig o Narodowe AI: Ukraina dołącza do gry, Polska już ma swoje asy w rękawie
-
 W cyfrowym świecie, gdzie giganci tacy jak Google czy OpenAI dostarczają nam potężne modele sztucznej inteligencji, coraz więcej krajów dostrzega potrzebę posiadania własnych, "narodowych" rozwiązań AI. Takie modele, doskonale rozumiejące lokalny język, kulturę i kontekst, stają się kluczowe dla suwerenności cyfrowej i innowacji. Ten trend wyraźnie widać w Europie Wschodniej, gdzie zarówno Ukraina, jak i Polska, aktywnie rozwijają swoje duże modele językowe (LLM).
 
 ## Ukraina buduje "swojego" cyfrowego geniusza

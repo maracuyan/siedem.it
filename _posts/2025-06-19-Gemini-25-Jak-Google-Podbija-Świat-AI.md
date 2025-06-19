@@ -1,7 +1,7 @@
 ---
 author: maracuyan
 categories:
-- General
+- Wiadomości
 date: '2025-06-19 07:03:15 '
 github_discussion_id: D_kwDOO8FI2s4AgULP
 github_discussion_url: https://github.com/maracuyan/siedem.it/discussions/27
@@ -10,8 +10,6 @@ layout: post
 llm_processed: true
 title: 'Gemini 2.5: Jak Google Podbija Świat AI?'
 ---
-
-# Gemini 2.5: Czy Google DeepMind Zdominuje Świat AI?
 
 Google DeepMind ponownie zaskakuje, wprowadzając na rynek Gemini 2.5 – model AI, który błyskawicznie zdobywa uznanie swoją mocą i wszechstronnością. Analizując najnowsze doniesienia i dostępne dane, przyjrzyjmy się bliżej, co stoi za sukcesem tego modelu i jakie rewolucje może on przynieść w świecie technologii.
 
