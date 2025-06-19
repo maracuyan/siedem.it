@@ -20,6 +20,21 @@ $text-color:       map-get($theme-colors, primary-text) !default; // Ensure $tex
 
 @import "minima"; // Or "{{ site.theme }}" if minima is specified in _config.yml
 
+.post-category {
+  font-size: 1.2em;
+  font-style: italic;
+  color: #888;
+}
+
+.post-container {
+  background: map-get($theme-colors, secondary-bg);
+  border-radius: 5px;
+  padding: $spacing-unit;
+  margin-bottom: $spacing-unit;
+  border: 1px solid darken(map-get($theme-colors, secondary-bg), 10%);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
 // Basic dark theme overrides
 body {
   background-color: map-get($theme-colors, primary-bg);

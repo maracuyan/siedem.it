@@ -6,6 +6,7 @@ layout: default # Changed from 'base' to 'default' to match typical Minima struc
   <header class="post-header">
     <h1 class="post-title p-name" itemprop="name headline">{{ page.title | escape }}</h1>
     <div class="post-meta">
+      <span class="post-category"></span>Kategoria: {{ page.categories }}</span>
       {%- assign date_format = site.minima.date_format | default: "%b %-d, %Y" -%}
       {% assign pdate = page.date | date_to_xmlschema %}
       {%- if page.modified_date %}<span class="meta-label">Published:</span>{% endif %}
@@ -30,8 +31,10 @@ layout: default # Changed from 'base' to 'default' to match typical Minima struc
     </div>
   </header>
 
-  <div class="post-content e-content" itemprop="articleBody">
-    {{ content }}
+  <div class="post-container">
+    <div class="post-content e-content" itemprop="articleBody">
+      {{ content }}
+    </div>
   </div>
 
   {% if jekyll.environment == 'production' -%}
