@@ -170,6 +170,7 @@ hr {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    max-width: 100%; // Make header 100% width
     @media screen and (max-width: $on-palm) { // Minima variable for small screens
         padding-left: $spacing-unit / 2;
         padding-right: $spacing-unit / 2;
