@@ -4,9 +4,9 @@ list_title: "Posty" # This might be overridden or ignored by the new content bel
 ---
 
 {% if site.posts.size > 0 %}
-  <ul class="post-list">
+  <ul class="post-list masonry-grid">
     {% for post in site.posts limit:5 %}
-      <li>
+      <li class="masonry-item">
         <a href="{{ post.url | relative_url }}" class="post-card-link">
           {% if post.thumbnail %}
             <div class="post-card-thumbnail">
