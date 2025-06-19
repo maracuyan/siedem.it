@@ -1,1 +1,13 @@
-<h1>Category pages are now generated dynamically.</h1>
+---
+layout: default
+---
+
+<h1>Category: {{ page.category }}</h1>
+
+<ul>
+  {% for post in site.categories[page.category] %}
+    <li>
+      <a href="{{ post.url }}">{{ post.title }}</a>
+    </li>
+  {% endfor %}
+</ul>

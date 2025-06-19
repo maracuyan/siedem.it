@@ -1,1 +1,13 @@
-<h1>Category pages are now generated dynamically.</h1>
+---
+layout: default
+---
+
+<h1>Categories</h1>
+
+<ul>
+  {% for category in site.categories %}
+    <li>
+      <a href="/category/{{ category | first | slugify }}/">{{ category | first }}</a> ({{ category | last | size }} posts)
+    </li>
+  {% endfor %}
+</ul>
