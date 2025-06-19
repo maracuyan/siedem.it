@@ -480,6 +480,7 @@ a.post-card-link {
   overflow-y: auto;
   padding: $spacing-unit;
   color: map-get($theme-colors, primary-text); // Default text color for sidebar
+  box-sizing: border-box; // <--- Add this line
 
   // Responsive width for smaller screens
   @media screen and (max-width: $on-palm) { // Assuming $on-palm is around 600px
