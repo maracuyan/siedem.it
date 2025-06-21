@@ -1,36 +1,30 @@
-<nav class="bottom-navbar fixed bottom-0 left-0 right-0 w-full z-50 bg-opacity-90 backdrop-blur-sm border-t border-gray-700 flex justify-around items-center p-1 text-sm" style="white-space: nowrap;">
-  <style>
-    @media (max-width: 768px) {
-      .bottom-navbar {
-        overflow-x: auto;
-      }
-    }
-  </style>
+<nav class="bottom-navbar fixed bottom-0 left-0 right-0 w-full z-50 bg-opacity-90 backdrop-blur-sm border-t border-gray-700 flex justify-around items-center p-1 text-sm">
+  <!--
+    Removed inline style for overflow-x: auto. We'll manage item count and wrapping via CSS / item reduction.
+    Removed style="white-space: nowrap;" from the nav tag itself.
+  -->
   <a href="{{ "/" | relative_url }}" class="nav-item flex flex-col items-center no-underline text-primary-text hover:text-accent-color">
-    <svg class="w-5 h-5 mb-1 fill-primary-text hover:fill-accent-color" width="24" height="24" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <!-- Modern Icon: Home -->
+    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
     <span>Strona Główna</span>
   </a>
-  <!-- <a href="#" class="nav-item" id="btn-kategorie">
-    <svg width="24" height="24" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+
+  <a href="{{ site.baseurl }}/category/wiadomosci/" class="nav-item flex flex-col items-center no-underline text-primary-text hover:text-accent-color"> <!-- Example: Link to a main category page or a dedicated categories listing page -->
+    <!-- Modern Icon: Categories (e.g., grid or list icon) -->
+    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
     <span>Kategorie</span>
-  </a> -->
-  {% assign categories_to_display = "Ankiety|Blog|Na luzie|Ogłoszenia|Porady|Recenzje|Wiadomości" | split: "|" %}
-  {% for category_name in categories_to_display %}
-    <a href="{{ site.baseurl }}/category/{{ category_name | slugify }}/" class="nav-item flex flex-col items-center no-underline text-primary-text hover:text-accent-color">
-      <svg class="w-5 h-5 mb-1 fill-primary-text hover:fill-accent-color" width="24" height="24" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
-      <span>{{ category_name }}</span>
-    </a>
-  {% endfor %}
+  </a>
+
   <a href="#" class="nav-item flex flex-col items-center no-underline text-primary-text hover:text-accent-color" id="btn-szukaj">
-    <svg class="w-5 h-5 mb-1 fill-primary-text hover:fill-accent-color" width="24" height="24" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5A6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    <!-- Modern Icon: Search -->
+    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
     <span>Szukaj</span>
   </a>
+
   <a href="#" class="nav-item flex flex-col items-center no-underline text-primary-text hover:text-accent-color" id="btn-ulubione">
-    <svg class="w-5 h-5 mb-1 fill-primary-text hover:fill-accent-color" width="24" height="24" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+    <!-- Modern Icon: Heart for Favorites -->
+    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
     <span>Ulubione</span>
   </a>
-  <a href="#" class="nav-item flex flex-col items-center no-underline text-primary-text hover:text-accent-color" id="btn-udostepnij">
-    <svg class="w-5 h-5 mb-1 fill-primary-text hover:fill-accent-color" width="24" height="24" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
-    <span>Udostępnij</span>
-  </a>
+  <!-- Udostępnij (Share) button removed for brevity, can be re-added if essential -->
 </nav>
