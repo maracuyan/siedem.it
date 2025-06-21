@@ -312,19 +312,61 @@ hr {
   padding-top: 8.5rem;
   padding-bottom: 3rem;
   display: grid;
-  grid-template-columns: 3fr 1fr;
-  grid-gap: 2rem;
+  /* Main content takes available space, sidebar is fixed at 20rem (320px) */
+  grid-template-columns: 1fr 20rem;
+  grid-gap: 2rem; /* Gap between main content and sidebar */
+  max-width: 1280px; /* Optional: constrain overall width of page content */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem; /* Add some padding to the overall page content area */
+  padding-right: 1rem;
 }
 
 .main-content {
-  grid-column: 1 / 4;
+  /* No explicit grid-column needed, it will be the first child */
   padding: 1rem; /* Add internal padding */
+  min-width: 0; /* Prevent overflow issues with flex/grid children */
 }
 
-.sidebar {
-  grid-column: 4 / 5;
-  padding: 1rem; /* Add internal padding */
+/* Mobile layout adjustments for page content */
+@media screen and (max-width: 767px) {
+  .page-content {
+    display: block; /* Stack main content and sidebar container */
+    padding-top: 7rem; /* Adjust if header height changes for mobile */
+  }
+
+  .main-content {
+    width: 100%; /* Ensure main content takes full width */
+    padding: 0.5rem; /* Adjust padding for smaller screens */
+  }
+
+  /* Hide the .sidebar grid container on mobile, as #sidebar (fixed panel) is used */
+  .sidebar {
+    display: none;
+  }
 }
+
+/* Styles for the #sidebar element, which is the actual sidebar panel */
+#sidebar {
+  /* Desktop styles: Behaves as a normal block within its .sidebar grid container */
+  width: 100%; /* Fill the .sidebar container */
+  height: auto; /* Adjust to content, or set a fixed height if desired e.g., 100vh with sticky positioning */
+  background-color: var(--secondary-bg);
+  /* box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Optional: shadow for desktop sidebar */
+  padding: 1.25rem;
+  box-sizing: border-box;
+  color: var(--primary-text);
+  overflow-y: auto; /* If content might overflow vertically */
+  /* No fixed positioning, z-index, or transitions by default for desktop */
+}
+
+/* This is the container for the sidebar in the grid layout (div.sidebar) */
+.sidebar {
+  /* grid-column will be handled in step 4 */
+  /* This container will define the width of the sidebar area on desktop */
+  /* On mobile, this container is hidden (see max-width: 767px query) */
+}
+
 
 @media (min-width: 768px) {
   .page-content {
@@ -489,16 +531,28 @@ a.post-card-link:hover .post-card-content h3 {
   color: var(--primary-text);
 }
 
-@media screen and (max-width: 600px) {
-  .sidebar {
-    width: 80%;
-    right: -80%;
+/* Mobile-specific styles for the sidebar panel */
+@media screen and (max-width: 600px) { /* Will review this breakpoint in step 2/3 for consistency */
+  #sidebar {
+    position: fixed;
+    top: 0;
+    right: -80%; /* Initially hidden off-screen */
+    width: 80%;   /* Or a fixed width like 280px, 300px if preferred over percentage */
+    height: 100%;
+    z-index: 100; /* Ensure it's above other content but below modals if any */
+    /* Transition properties are inherited or can be re-defined here if different for mobile */
+    transition-property: right;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-in-out;
+  }
+
+  #sidebar.open {
+    right: 0; /* Slides in when 'open' class is added */
   }
 }
 
-.sidebar.open {
-    right: 0;
-}
+/* Styles for the .sidebar class (grid item) will be handled in step 2 & 3 */
+
 
 .sidebar-close-btn {
   position: absolute;
@@ -552,8 +606,10 @@ a.post-card-link:hover .post-card-content h3 {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
-  z-index: 40;
-  display: none;
+  /* Should be above general content (header/footer are z-index 50)
+     but below the sidebar panel (#sidebar is z-index 1000 on mobile) */
+  z-index: 990;
+  display: none; /* Hidden by default */
 }
 
 .sidebar-overlay.active {
