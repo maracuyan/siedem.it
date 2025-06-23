@@ -1,8 +1,8 @@
 <header class="site-header fixed top-0 left-0 right-0 z-50 bg-opacity-80 backdrop-blur-sm p-2" role="banner">
   <div class="wrapper container mx-auto flex justify-between items-center">
-    <a class="site-title text-xl text-primary-text" rel="author" href="{{ "/" | relative_url }}">{{ site.title | escape }}</a>
+    <a class="site-title text-primary-text" rel="author" href="{{ "/" | relative_url }}">{{ site.title | escape }}</a>
     <nav class="main-nav flex items-center flex-grow">
-      <ul class="list-none p-0 m-0 flex items-center flex-grow">
+      <ul class="list-none p-0 m-0 flex items-center flex-grow main-nav-ul">
         <li {% if page.url == "/" %}class="active-nav-item"{% endif %}><a class="no-underline text-primary-text text-sm hover:text-link-hover-color" href="{{ "/" | relative_url }}">Strona Główna</a></li>
         <li><a class="no-underline text-primary-text text-sm hover:text-link-hover-color" href="https://maracuyan.github.io/siedem.it/category/ankiety">Ankiety</a></li>
         <li><a class="no-underline text-primary-text text-sm hover:text-link-hover-color" href="https://maracuyan.github.io/siedem.it/category/blog">Blog</a></li>
@@ -19,5 +19,48 @@
         </svg>
       </a>
     </nav>
+    <button id="mobile-menu-button" class="md:hidden ml-4 p-2 text-primary-text">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+      </svg>
+    </button>
   </div>
 </header>
+
+<style>
+@media (max-width: 767px) {
+  .main-nav-ul {
+    display: none; /* Hide navigation links by default on mobile */
+    flex-direction: column;
+    position: absolute;
+    top: 100%; /* Position below the header */
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.9); /* Same as header background */
+    padding: 1rem 0;
+  }
+  .main-nav-ul.show {
+    display: flex; /* Show when 'show' class is added */
+  }
+  .main-nav-ul li {
+    margin: 0.5rem 0;
+    text-align: center;
+  }
+  .site-header .site-title {
+    font-size: 1.25rem; /* Ensure mobile title size is applied */
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const menuButton = document.getElementById('mobile-menu-button');
+  const navUl = document.querySelector('.main-nav-ul');
+
+  if (menuButton && navUl) {
+    menuButton.addEventListener('click', function () {
+      navUl.classList.toggle('show');
+    });
+  }
+});
+</script>

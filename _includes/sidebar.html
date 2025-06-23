@@ -4,8 +4,11 @@
     <div id="sidebar-kategorie-content" class="sidebar-section-content">
       <h2 class="text-accent-color mt-6 mb-2">Kategorie</h2>
       <ul class="category-list">
+        {% assign main_nav_categories = "Ankiety,Blog,Na luzie,Ogłoszenia,Porady,Recenzje,Wiadomości" | split: "," %}
         {% for category in site.categories %}
-          <li><a href="{{ site.baseurl }}/category/{{ category | first | slugify }}/">{{ category | first }} ({{ category | last | size }})</a></li>
+          {% unless main_nav_categories contains category.first %}
+            <li><a href="{{ site.baseurl }}/category/{{ category | first | slugify }}/">{{ category | first }} ({{ category | last | size }})</a></li>
+          {% endunless %}
         {% endfor %}
       </ul>
     </div>
